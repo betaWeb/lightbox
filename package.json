@@ -1,0 +1,35 @@
+{
+  "name": "@betaweb/lightbox",
+  "version": "1.0.0",
+  "description": "A simple JavaScript class to generate images Lightbox",
+  "main": "index.js",
+  "scripts": {
+    "watch": "parcel watch src/Lightbox.ts -o lightbox",
+    "build": "parcel build index.js -o lightbox"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/betaWeb/lightbox.git"
+  },
+  "keywords": [
+    "lightbox",
+    "customelement",
+    "html",
+    "javascript",
+    "typescript",
+    "class",
+    "custom",
+    "element",
+    "image"
+  ],
+  "author": "Cyprien GLEPIN <betaweb34@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/betaWeb/lightbox/issues"
+  },
+  "homepage": "https://github.com/betaWeb/lightbox#readme",
+  "devDependencies": {
+    "parcel-bundler": "^1.12.4",
+    "typescript": "^4.0.5"
+  }
+}

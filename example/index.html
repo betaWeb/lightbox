@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Title</title>
+	<link rel="stylesheet" href="../dist/lightbox.css">
+	<script src="../dist/lightbox.js" defer></script>
+	<script defer>
+		document.addEventListener('DOMContentLoaded', () => {
+            new window.Lightbox('.lightbox--link')
+		})
+	</script>
+</head>
+<body>
+
+<p>
+	<img src="https://wallpaperaccess.com/full/82311.jpg" height="300" class="lightbox--link">
+</p>
+<p>
+	<button class="lightbox--link" data-src="https://wallpaperaccess.com/full/82311.jpg" data-legend="Inspiration #1">See this image on a lightbox !</button>
+</p>
+
+</body>
+</html>
