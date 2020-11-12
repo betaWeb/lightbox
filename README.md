@@ -11,7 +11,7 @@ Just load CSS and JS files :
 
 Then, create a new instance of Lightbox class :
 ```javascript
-    new window.Lightbox()
+new window.Lightbox()
 ```
 
 And add the class `.lighbox-link` to an HTML element as follow :
@@ -25,4 +25,21 @@ And add the class `.lighbox-link` to an HTML element as follow :
     data-src="/path/to/image" 
     data-legend="Inspiration #1"
 >See my image in a lighbox !</buttom>
+```
+
+## Configuration
+You can pass a configuration object to the instance, as follow :
+```javascript
+new window.Lightbox({
+    selector: '.lightbox--link',
+    lightbox_class: 'lightbox',
+    lightbox_inner_class: 'lightbox--inner',
+    lightbox_legend_class: 'lightbox--legend',
+    lightbox_visible_class: 'visible',
+    image_loading_class: 'is-loading',
+    prevent_scroll: true,
+    prevent_scroll_class: 'prevent-scroll',
+    prevent_scroll_element: document.body,
+    inner_offset: 30 // gap between screen edge and the image (the ratio is dynamically calculated by the library)
+})
 ```
