@@ -10,13 +10,18 @@ declare type Options = {
     prevent_scroll: boolean
     prevent_scroll_class: string
     prevent_scroll_element: HTMLElement
-    inner_offset: number
+    inner_offset: number,
+    nav: boolean,
+    nav_prev_class: string
+    nav_next_class: string
 }
 
-declare type LightboxListItem = {
-    event_handler: Function
+declare interface LightboxListItem {
+    el?: HTMLElement,
+    event_handler?: Function
     lightbox?: HTMLDivElement
     lightbox_inner?: HTMLDivElement
+    src?: string
 }
 
 declare type AspectRatio = {
@@ -27,10 +32,15 @@ declare type AspectRatio = {
 }
 
 declare type Groups = {
-    [key: string]: Map<HTMLElement, LightboxListItem|null>
+    [key: string]: LightboxListItem
 }
 
-export default class Lightbox {
+declare type Current = {
+    group: string
+    index: number
+}
+
+export default class Lightbox<T> {
 
     public elements: NodeList
 
@@ -44,6 +54,11 @@ export default class Lightbox {
 
     private _image: HTMLImageElement = null
 
+    private _current: Current = {
+        group: '',
+        index: -1
+    }
+
     public static get default_options(): Options {
         return {
             selector: '.lightbox--link',
@@ -55,7 +70,10 @@ export default class Lightbox {
             prevent_scroll: true,
             prevent_scroll_class: 'prevent-scroll',
             prevent_scroll_element: document.body,
-            inner_offset: 30
+            inner_offset: 30,
+            nav: true,
+            nav_prev_class: 'lightbox--prev',
+            nav_next_class: 'lightbox--next'
         }
     }
 
@@ -78,12 +96,12 @@ export default class Lightbox {
         this.attachEvents()
     }
 
-    public async show(src: string): Promise<void> {
+    public show(src: string): void {
         this._lightbox.classList.add(this.options.image_loading_class)
 
         this._image = new Image()
 
-        this._image.onload = async () => {
+        this._image.onload = async (): Promise<void> => {
             await this.setInnerBoundings()
 
             this._lightbox_inner.style.backgroundImage = `url('${this._image.src}')`
@@ -102,7 +120,7 @@ export default class Lightbox {
         this._lightbox.classList.add(this.options.lightbox_visible_class)
     }
 
-    public hide(): void {
+    public hide(): this {
         this._lightbox.classList.remove(this.options.lightbox_visible_class)
 
         if (this.options.prevent_scroll) {
@@ -112,27 +130,49 @@ export default class Lightbox {
         this._lightbox_inner.style.backgroundImage = null
         this._image = null
 
-        this._lightbox.remove()
+        this._current.group = ''
+        this._current.index = -1
+
+        return this
+    }
+
+    public prev(): this {
+        const {group, index} = this._current
+
+        let item: LightboxListItem =
+            this._groups[group][index - 1] ||
+            this._groups[group][Object.keys(this._groups[group]).length - 1]
+
+        this.hide().show(item.src)
+
+        return this
+    }
+
+    public next(): this {
+        const {group, index} = this._current
+
+        let item: LightboxListItem =
+            this._groups[group][index + 1] ||
+            this._groups[group][0]
+
+        this.hide().show(item.src)
+
+        return this
     }
 
     public destroy(): void {
         for (let group in this._groups) {
             if (this._groups.hasOwnProperty(group)) {
-                const entries = Array.from(this._groups[group].entries())
+                const entries = Object.values(this._groups[group])
 
                 if (entries.length > 0) {
-                    entries.forEach(([el, {event_handler, lightbox, lightbox_inner}]) => {
-                        if (lightbox_inner) {
-                            lightbox_inner.removeEventListener('click', (e: MouseEvent) => e.stopPropagation())
-                            lightbox_inner.remove()
+                    entries.forEach((entry: LightboxListItem): void => {
+                        if (entry.lightbox_inner) {
+                            entry.lightbox_inner.removeEventListener('click', (e: MouseEvent) => e.stopPropagation())
+                            entry.lightbox_inner.remove()
                         }
 
-                        if (lightbox) {
-                            lightbox.removeEventListener('click', this.hide)
-                            lightbox.remove()
-                        }
-
-                        el.removeEventListener('click', event_handler as EventListener)
+                        entry.el.removeEventListener('click', entry.event_handler as EventListener)
                     })
                 }
             }
@@ -141,27 +181,15 @@ export default class Lightbox {
         window.removeEventListener('resize', debounce(this.onResize, 300) as EventListener)
         window.removeEventListener('keyup', this.onEscape)
 
+        this._lightbox.removeEventListener('click', this.hide)
+        this._lightbox.remove()
+
         this._lightbox = null
         this._lightbox_inner = null
         this._image = null
         this._groups = {}
-    }
-
-    private attachEvents(): void {
-        window.addEventListener('resize', debounce(this.onResize, 300) as EventListener)
-        window.addEventListener('keyup', this.onEscape)
-
-        this.elements.forEach(async (el: HTMLElement): Promise<void> => {
-            const event_handler = async _ => await this.onElementClick(el)
-
-            el.addEventListener('click', event_handler)
-
-            for (let group in this._groups) {
-                if (this._groups.hasOwnProperty(group)) {
-                    this._groups[group].set(el, { event_handler })
-                }
-            }
-        })
+        this._current.group = ''
+        this._current.index = -1
     }
 
     private createLightBox(): void {
@@ -172,7 +200,32 @@ export default class Lightbox {
         this._lightbox.classList.add(this.options.lightbox_class)
         this._lightbox.appendChild(this._lightbox_inner)
 
+        if (this.options.nav === true) {
+            const nav_prev = document.createElement('div')
+            const nav_next = document.createElement('div')
+
+            nav_prev.classList.add(this.options.nav_prev_class)
+            nav_next.classList.add(this.options.nav_next_class)
+
+            nav_prev.addEventListener('click', () => this.prev())
+            nav_next.addEventListener('click', () => this.next())
+
+            this._lightbox_inner.appendChild(nav_prev)
+            this._lightbox_inner.appendChild(nav_next)
+        }
+
         document.body.appendChild(this._lightbox)
+    }
+
+    private attachEvents(): void {
+        window.addEventListener('resize', debounce(this.onResize, 300) as EventListener)
+        window.addEventListener('keyup', this.onEscape)
+
+        this.createLightBox()
+
+        this.elements.forEach(async (el: HTMLElement, index: number): Promise<void> => {
+            await this.storeElement(el, index)
+        })
     }
 
     private createLegend(legend: string): void {
@@ -184,41 +237,38 @@ export default class Lightbox {
         this._lightbox_inner.appendChild(div)
     }
 
-    private async onElementClick(el: HTMLImageElement|HTMLElement): Promise<void> {
+    private async storeElement(el: HTMLImageElement|HTMLElement, index: number): Promise<void> {
         const src = el.constructor === HTMLImageElement ? el.src : el.dataset.src
         const group = el.dataset.group || 'default'
+        // const legend = el.dataset.legend || null
 
         if (!this._groups[group]) {
-            this._groups[group] = new Map()
+            this._groups[group] = {}
         }
 
-        if (!this._groups[group].has(el)) {
-            const legend = el.dataset.legend || null
+        /*if (legend !== null) {
+            this.createLegend(legend)
+        }*/
 
-            this.createLightBox()
+        this._lightbox.addEventListener('click', this.hide)
+        this._lightbox_inner.addEventListener('click', (e: MouseEvent) => e.stopPropagation())
 
-            this._lightbox.addEventListener('click', this.hide)
-            this._lightbox_inner.addEventListener('click', (e: MouseEvent) => e.stopPropagation())
+        const event_handler = () => {
+            this._current.group = group
+            this._current.index = index
 
-            if (legend !== null) {
-                this.createLegend(legend)
-            }
-
-            this._groups[group].set(el, {
-                ...this._groups[group].get(el),
-                lightbox: this._lightbox,
-                lightbox_inner: this._lightbox_inner,
-            })
-        } else {
-            const {lightbox_inner, lightbox} = this._groups[group].get(el)
-
-            this._lightbox = lightbox
-            this._lightbox_inner = lightbox_inner
-
-            document.body.appendChild(this._lightbox)
+            this.show(src)
         }
 
-        await this.show(src)
+        this._groups[group][index] = {
+            el,
+            event_handler,
+            lightbox: this._lightbox,
+            lightbox_inner: this._lightbox_inner,
+            src
+        } as LightboxListItem
+
+        el.addEventListener('click', event_handler)
     }
 
     private onEscape(e: KeyboardEvent): void {
