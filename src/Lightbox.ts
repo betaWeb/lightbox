@@ -1,4 +1,3 @@
-import './style.css'
 import {debounce} from "./utils";
 
 declare type Options = {
@@ -27,6 +26,10 @@ declare type AspectRatio = {
     orientation: string
 }
 
+declare type Groups = {
+    [key: string]: Map<HTMLElement, LightboxListItem|null>
+}
+
 export default class Lightbox {
 
     public elements: NodeList
@@ -37,7 +40,7 @@ export default class Lightbox {
 
     private _lightbox_inner: HTMLDivElement
 
-    private _list: Map<HTMLElement, LightboxListItem|null> = new Map()
+    private _groups: Groups = {}
 
     private _image: HTMLImageElement = null
 
@@ -84,7 +87,10 @@ export default class Lightbox {
             await this.setInnerBoundings()
 
             this._lightbox_inner.style.backgroundImage = `url('${this._image.src}')`
-            this._lightbox.classList.remove(this.options.image_loading_class)
+
+            setTimeout(() => {
+                this._lightbox.classList.remove(this.options.image_loading_class)
+            }, 300)
         }
 
         this._image.src = src
@@ -110,23 +116,26 @@ export default class Lightbox {
     }
 
     public destroy(): void {
-        const entries = Array.from(this._list.entries())
+        for (let group in this._groups) {
+            if (this._groups.hasOwnProperty(group)) {
+                const entries = Array.from(this._groups[group].entries())
 
-        if (entries.length > 0) {
-            entries.forEach(([el, {event_handler, lightbox, lightbox_inner}]) => {
-                if (lightbox_inner) {
-                    lightbox_inner.removeEventListener('click', (e: MouseEvent) => e.stopPropagation())
-                    lightbox_inner.remove()
+                if (entries.length > 0) {
+                    entries.forEach(([el, {event_handler, lightbox, lightbox_inner}]) => {
+                        if (lightbox_inner) {
+                            lightbox_inner.removeEventListener('click', (e: MouseEvent) => e.stopPropagation())
+                            lightbox_inner.remove()
+                        }
+
+                        if (lightbox) {
+                            lightbox.removeEventListener('click', this.hide)
+                            lightbox.remove()
+                        }
+
+                        el.removeEventListener('click', event_handler as EventListener)
+                    })
                 }
-
-                if (lightbox) {
-                    lightbox.removeEventListener('click', this.hide)
-                    lightbox.remove()
-                }
-
-                // @ts-ignore
-                el.removeEventListener('click', event_handler)
-            })
+            }
         }
 
         window.removeEventListener('resize', debounce(this.onResize, 300) as EventListener)
@@ -135,7 +144,7 @@ export default class Lightbox {
         this._lightbox = null
         this._lightbox_inner = null
         this._image = null
-        this._list = new Map()
+        this._groups = {}
     }
 
     private attachEvents(): void {
@@ -147,7 +156,11 @@ export default class Lightbox {
 
             el.addEventListener('click', event_handler)
 
-            this._list.set(el, { event_handler })
+            for (let group in this._groups) {
+                if (this._groups.hasOwnProperty(group)) {
+                    this._groups[group].set(el, { event_handler })
+                }
+            }
         })
     }
 
@@ -173,9 +186,13 @@ export default class Lightbox {
 
     private async onElementClick(el: HTMLImageElement|HTMLElement): Promise<void> {
         const src = el.constructor === HTMLImageElement ? el.src : el.dataset.src
-        const {lightbox_inner, lightbox} = this._list.get(el)
+        const group = el.dataset.group || 'default'
 
-        if (!lightbox) {
+        if (!this._groups[group]) {
+            this._groups[group] = new Map()
+        }
+
+        if (!this._groups[group].has(el)) {
             const legend = el.dataset.legend || null
 
             this.createLightBox()
@@ -187,12 +204,14 @@ export default class Lightbox {
                 this.createLegend(legend)
             }
 
-            this._list.set(el, {
-                ...this._list.get(el),
+            this._groups[group].set(el, {
+                ...this._groups[group].get(el),
                 lightbox: this._lightbox,
                 lightbox_inner: this._lightbox_inner,
             })
         } else {
+            const {lightbox_inner, lightbox} = this._groups[group].get(el)
+
             this._lightbox = lightbox
             this._lightbox_inner = lightbox_inner
 
@@ -274,4 +293,8 @@ export default class Lightbox {
             orientation
         }
     }
+}
+
+if (window && document) {
+    window['Lightbox'] = Lightbox
 }

@@ -4,8 +4,11 @@
   "description": "A simple JavaScript class to generate images Lightbox",
   "main": "index.js",
   "scripts": {
-    "watch": "parcel watch src/Lightbox.ts -o lightbox",
-    "build": "parcel build index.js -o lightbox"
+    "watch": "parcel watch src/Lightbox.ts -d build -o lightbox",
+    "demo": "parcel serve example/index.html",
+    "dist": "parcel build index.js -o lightbox.min.js",
+    "styles": "parcel build src/style.css -o lightbox.min.css",
+    "build": "npm run dist && npm run styles"
   },
   "repository": {
     "type": "git",

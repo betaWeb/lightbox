@@ -3,8 +3,8 @@
 <head>
 	<meta charset="UTF-8">
 	<title>Title</title>
-	<link rel="stylesheet" href="../dist/lightbox.css">
-	<script src="../dist/lightbox.js" defer></script>
+	<link rel="stylesheet" href="../src/style.css">
+	<script src="../build/lightbox.js" defer></script>
 	<script defer>
 		document.addEventListener('DOMContentLoaded', () => {
             new window.Lightbox('.lightbox--link')
@@ -14,10 +14,22 @@
 <body>
 
 <p>
-	<img src="https://wallpaperaccess.com/full/82311.jpg" height="300" class="lightbox--link">
+	<h2>Group "nature"</h2>
+	<img src="https://www.leplombetlaplume.fr/app/uploads/2020/03/3765-800x561.jpg" height="300" class="lightbox--link" data-group="nature">
+	<img src="https://www.leplombetlaplume.fr/app/uploads/2020/03/2674573-768x512.jpg" height="300" class="lightbox--link" data-group="nature">
 </p>
+
 <p>
-	<button class="lightbox--link" data-src="https://wallpaperaccess.com/full/82311.jpg" data-legend="Inspiration #1">See this image on a lightbox !</button>
+	<h2>Group "travel"</h2>
+	<img src="https://www.leplombetlaplume.fr/app/uploads/2020/02/DSC_0046-576x1024.jpg" height="300" class="lightbox--link" data-group="travel">
+	<img src="https://www.leplombetlaplume.fr/app/uploads/2020/02/DSC_0110-800x1422.jpg" height="300" class="lightbox--link" data-group="travel">
+	<img src="https://www.leplombetlaplume.fr/app/uploads/2020/02/IMG_20190831_175458-1152x1536.jpg" height="300" class="lightbox--link" data-group="travel">
+	<img src="https://www.leplombetlaplume.fr/app/uploads/2020/02/IMG_20190901_133126-1152x1536.jpg" height="300" class="lightbox--link" data-group="travel">
+</p>
+
+<p>
+	<h2>Button event</h2>
+	<button class="lightbox--link" data-src="https://wallpaperaccess.com/full/82311.jpg" data-legend="Inspiration #1">Show big image</button>
 </p>
 
 </body>
