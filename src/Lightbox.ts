@@ -32,7 +32,7 @@ declare type AspectRatio = {
 }
 
 declare type Groups = {
-    [key: string]: LightboxListItem
+    [key: string]: LightboxListItem[]
 }
 
 declare type Current = {
@@ -137,27 +137,11 @@ export default class Lightbox<T> {
     }
 
     public prev(): this {
-        const {group, index} = this._current
-
-        let item: LightboxListItem =
-            this._groups[group][index - 1] ||
-            this._groups[group][Object.keys(this._groups[group]).length - 1]
-
-        this.hide().show(item.src)
-
-        return this
+        return this.nav(-1)
     }
 
     public next(): this {
-        const {group, index} = this._current
-
-        let item: LightboxListItem =
-            this._groups[group][index + 1] ||
-            this._groups[group][0]
-
-        this.hide().show(item.src)
-
-        return this
+        return this.nav(1)
     }
 
     public destroy(): void {
@@ -192,6 +176,25 @@ export default class Lightbox<T> {
         this._current.index = -1
     }
 
+    private nav(direction) {
+        const {group, index} = this._current
+        const count = Object.keys(this._groups[group]).length
+        const newIndex = direction < 0
+         ? index - 1 < 0 ? count : index
+         : index + 1 === count ? -1 : index
+
+        let item: LightboxListItem = this._groups[group][newIndex + direction]
+
+        this.hide()
+
+        this._current.group = group
+        this._current.index = newIndex + direction
+
+        this.show(item.src)
+
+        return this
+    }
+
     private createLightBox(): void {
         this._lightbox_inner = document.createElement('div')
         this._lightbox_inner.classList.add(this.options.lightbox_inner_class)
@@ -223,8 +226,8 @@ export default class Lightbox<T> {
 
         this.createLightBox()
 
-        this.elements.forEach(async (el: HTMLElement, index: number): Promise<void> => {
-            await this.storeElement(el, index)
+        this.elements.forEach(async (el: HTMLElement): Promise<void> => {
+            await this.storeElement(el)
         })
     }
 
@@ -237,14 +240,15 @@ export default class Lightbox<T> {
         this._lightbox_inner.appendChild(div)
     }
 
-    private async storeElement(el: HTMLImageElement|HTMLElement, index: number): Promise<void> {
+    private async storeElement(el: HTMLImageElement|HTMLElement): Promise<void> {
         const src = el.constructor === HTMLImageElement ? el.src : el.dataset.src
         const group = el.dataset.group || 'default'
         // const legend = el.dataset.legend || null
 
         if (!this._groups[group]) {
-            this._groups[group] = {}
+            this._groups[group] = []
         }
+
 
         /*if (legend !== null) {
             this.createLegend(legend)
@@ -253,22 +257,24 @@ export default class Lightbox<T> {
         this._lightbox.addEventListener('click', this.hide)
         this._lightbox_inner.addEventListener('click', (e: MouseEvent) => e.stopPropagation())
 
-        const event_handler = () => {
+        const item: LightboxListItem = {
+            el,
+            lightbox: this._lightbox,
+            lightbox_inner: this._lightbox_inner,
+            src
+        }
+        const index: number = this._groups[group].push(item) - 1
+
+        const event_handler = (): void => {
             this._current.group = group
             this._current.index = index
 
             this.show(src)
         }
 
-        this._groups[group][index] = {
-            el,
-            event_handler,
-            lightbox: this._lightbox,
-            lightbox_inner: this._lightbox_inner,
-            src
-        } as LightboxListItem
+        this._groups[group][index].event_handler = event_handler
 
-        el.addEventListener('click', event_handler)
+        el.addEventListener('click', event_handler as EventListener)
     }
 
     private onEscape(e: KeyboardEvent): void {

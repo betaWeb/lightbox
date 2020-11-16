@@ -528,23 +528,11 @@ parcelRequire = function (modules, cache, entry, globalName) {
       };
 
       Lightbox.prototype.prev = function () {
-        var _a = this._current,
-            group = _a.group,
-            index = _a.index;
-
-        var item = this._groups[group][index - 1] || this._groups[group][Object.keys(this._groups[group]).length - 1];
-
-        this.hide().show(item.src);
-        return this;
+        return this.nav(-1);
       };
 
       Lightbox.prototype.next = function () {
-        var _a = this._current,
-            group = _a.group,
-            index = _a.index;
-        var item = this._groups[group][index + 1] || this._groups[group][0];
-        this.hide().show(item.src);
-        return this;
+        return this.nav(1);
       };
 
       Lightbox.prototype.destroy = function () {
@@ -580,6 +568,20 @@ parcelRequire = function (modules, cache, entry, globalName) {
         this._groups = {};
         this._current.group = '';
         this._current.index = -1;
+      };
+
+      Lightbox.prototype.nav = function (direction) {
+        var _a = this._current,
+            group = _a.group,
+            index = _a.index;
+        var count = Object.keys(this._groups[group]).length;
+        var newIndex = direction < 0 ? index - 1 < 0 ? count : index : index + 1 === count ? -1 : index;
+        var item = this._groups[group][newIndex + direction];
+        this.hide();
+        this._current.group = group;
+        this._current.index = newIndex + direction;
+        this.show(item.src);
+        return this;
       };
 
       Lightbox.prototype.createLightBox = function () {
@@ -621,12 +623,12 @@ parcelRequire = function (modules, cache, entry, globalName) {
         window.addEventListener('resize', utils_1.debounce(this.onResize, 300));
         window.addEventListener('keyup', this.onEscape);
         this.createLightBox();
-        this.elements.forEach(function (el, index) {
+        this.elements.forEach(function (el) {
           return __awaiter(_this, void 0, Promise, function () {
             return __generator(this, function (_a) {
               switch (_a.label) {
                 case 0:
-                  return [4, this.storeElement(el, index)];
+                  return [4, this.storeElement(el)];
 
                 case 1:
                   _a.sent();
@@ -646,9 +648,9 @@ parcelRequire = function (modules, cache, entry, globalName) {
         this._lightbox_inner.appendChild(div);
       };
 
-      Lightbox.prototype.storeElement = function (el, index) {
+      Lightbox.prototype.storeElement = function (el) {
         return __awaiter(this, void 0, Promise, function () {
-          var src, group, event_handler;
+          var src, group, item, index, event_handler;
 
           var _this = this;
 
@@ -657,7 +659,7 @@ parcelRequire = function (modules, cache, entry, globalName) {
             group = el.dataset.group || 'default';
 
             if (!this._groups[group]) {
-              this._groups[group] = {};
+              this._groups[group] = [];
             }
 
             this._lightbox.addEventListener('click', this.hide);
@@ -666,6 +668,14 @@ parcelRequire = function (modules, cache, entry, globalName) {
               return e.stopPropagation();
             });
 
+            item = {
+              el: el,
+              lightbox: this._lightbox,
+              lightbox_inner: this._lightbox_inner,
+              src: src
+            };
+            index = this._groups[group].push(item) - 1;
+
             event_handler = function event_handler() {
               _this._current.group = group;
               _this._current.index = index;
@@ -673,13 +683,7 @@ parcelRequire = function (modules, cache, entry, globalName) {
               _this.show(src);
             };
 
-            this._groups[group][index] = {
-              el: el,
-              event_handler: event_handler,
-              lightbox: this._lightbox,
-              lightbox_inner: this._lightbox_inner,
-              src: src
-            };
+            this._groups[group][index].event_handler = event_handler;
             el.addEventListener('click', event_handler);
             return [2];
           });
@@ -810,7 +814,7 @@ parcelRequire = function (modules, cache, entry, globalName) {
     if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
       var hostname = "" || location.hostname;
       var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-      var ws = new WebSocket(protocol + '://' + hostname + ':' + "36617" + '/');
+      var ws = new WebSocket(protocol + '://' + hostname + ':' + "33307" + '/');
 
       ws.onmessage = function (event) {
         checkedAssets = {};
@@ -1016,7 +1020,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "45479" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "43363" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
