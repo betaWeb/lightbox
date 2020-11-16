@@ -435,7 +435,11 @@ parcelRequire = function (modules, cache, entry, globalName) {
         }
 
         this._groups = {};
+        this._lightbox = null;
+        this._lightbox_inner = null;
         this._image = null;
+        this._nav_prev = null;
+        this._nav_next = null;
         this._current = {
           group: '',
           index: -1
@@ -448,6 +452,8 @@ parcelRequire = function (modules, cache, entry, globalName) {
         }
 
         this.hide = this.hide.bind(this);
+        this.prev = this.prev.bind(this);
+        this.next = this.next.bind(this);
         this.onEscape = this.onEscape.bind(this);
         this.onResize = this.onResize.bind(this);
         this.attachEvents();
@@ -522,8 +528,7 @@ parcelRequire = function (modules, cache, entry, globalName) {
 
         this._lightbox_inner.style.backgroundImage = null;
         this._image = null;
-        this._current.group = '';
-        this._current.index = -1;
+        this.setCurrent();
         return this;
       };
 
@@ -558,6 +563,10 @@ parcelRequire = function (modules, cache, entry, globalName) {
         window.removeEventListener('resize', utils_1.debounce(this.onResize, 300));
         window.removeEventListener('keyup', this.onEscape);
 
+        this._nav_prev.removeEventListener('click', this.prev);
+
+        this._nav_next.removeEventListener('click', this.next);
+
         this._lightbox.removeEventListener('click', this.hide);
 
         this._lightbox.remove();
@@ -566,8 +575,9 @@ parcelRequire = function (modules, cache, entry, globalName) {
         this._lightbox_inner = null;
         this._image = null;
         this._groups = {};
-        this._current.group = '';
-        this._current.index = -1;
+        this._nav_prev = null;
+        this._nav_next = null;
+        this.setCurrent();
       };
 
       Lightbox.prototype.nav = function (direction) {
@@ -578,15 +588,12 @@ parcelRequire = function (modules, cache, entry, globalName) {
         var newIndex = direction < 0 ? index - 1 < 0 ? count : index : index + 1 === count ? -1 : index;
         var item = this._groups[group][newIndex + direction];
         this.hide();
-        this._current.group = group;
-        this._current.index = newIndex + direction;
+        this.setCurrent(group, newIndex + direction);
         this.show(item.src);
         return this;
       };
 
       Lightbox.prototype.createLightBox = function () {
-        var _this = this;
-
         this._lightbox_inner = document.createElement('div');
 
         this._lightbox_inner.classList.add(this.options.lightbox_inner_class);
@@ -602,16 +609,15 @@ parcelRequire = function (modules, cache, entry, globalName) {
           var nav_next = document.createElement('div');
           nav_prev.classList.add(this.options.nav_prev_class);
           nav_next.classList.add(this.options.nav_next_class);
-          nav_prev.addEventListener('click', function () {
-            return _this.prev();
-          });
-          nav_next.addEventListener('click', function () {
-            return _this.next();
-          });
+          nav_prev.addEventListener('click', this.prev);
+          nav_next.addEventListener('click', this.next);
 
           this._lightbox_inner.appendChild(nav_prev);
 
           this._lightbox_inner.appendChild(nav_next);
+
+          this._nav_prev = nav_prev;
+          this._nav_next = nav_next;
         }
 
         document.body.appendChild(this._lightbox);
@@ -677,8 +683,7 @@ parcelRequire = function (modules, cache, entry, globalName) {
             index = this._groups[group].push(item) - 1;
 
             event_handler = function event_handler() {
-              _this._current.group = group;
-              _this._current.index = index;
+              _this.setCurrent(group, index);
 
               _this.show(src);
             };
@@ -775,6 +780,19 @@ parcelRequire = function (modules, cache, entry, globalName) {
         };
       };
 
+      Lightbox.prototype.setCurrent = function (group, index) {
+        if (group === void 0) {
+          group = '';
+        }
+
+        if (index === void 0) {
+          index = -1;
+        }
+
+        this._current.group = group;
+        this._current.index = index;
+      };
+
       return Lightbox;
     }();
 
@@ -814,7 +832,7 @@ parcelRequire = function (modules, cache, entry, globalName) {
     if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
       var hostname = "" || location.hostname;
       var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-      var ws = new WebSocket(protocol + '://' + hostname + ':' + "33307" + '/');
+      var ws = new WebSocket(protocol + '://' + hostname + ':' + "37591" + '/');
 
       ws.onmessage = function (event) {
         checkedAssets = {};
@@ -1020,7 +1038,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "43363" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "42257" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

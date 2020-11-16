@@ -40,6 +40,9 @@ new window.Lightbox({
     prevent_scroll: true,
     prevent_scroll_class: 'prevent-scroll',
     prevent_scroll_element: document.body,
-    inner_offset: 30 // gap between screen edge and the image (the ratio is dynamically calculated by the library)
+    inner_offset: 30, // gap between screen edge and the image (the ratio is dynamically calculated by the library)
+    nav: true,
+    nav_prev_class: 'lightbox--prev',
+    nav_next_class: 'lightbox--next'
 })
 ```

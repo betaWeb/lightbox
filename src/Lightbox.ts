@@ -46,13 +46,17 @@ export default class Lightbox<T> {
 
     public options: Options
 
-    private _lightbox: HTMLDivElement
-
-    private _lightbox_inner: HTMLDivElement
-
     private _groups: Groups = {}
 
+    private _lightbox: HTMLDivElement = null
+
+    private _lightbox_inner: HTMLDivElement = null
+
     private _image: HTMLImageElement = null
+
+    private _nav_prev: HTMLDivElement = null
+
+    private _nav_next: HTMLDivElement = null
 
     private _current: Current = {
         group: '',
@@ -90,6 +94,8 @@ export default class Lightbox<T> {
         }
 
         this.hide = this.hide.bind(this)
+        this.prev = this.prev.bind(this)
+        this.next = this.next.bind(this)
         this.onEscape = this.onEscape.bind(this)
         this.onResize = this.onResize.bind(this)
 
@@ -130,8 +136,7 @@ export default class Lightbox<T> {
         this._lightbox_inner.style.backgroundImage = null
         this._image = null
 
-        this._current.group = ''
-        this._current.index = -1
+        this.setCurrent()
 
         return this
     }
@@ -165,6 +170,9 @@ export default class Lightbox<T> {
         window.removeEventListener('resize', debounce(this.onResize, 300) as EventListener)
         window.removeEventListener('keyup', this.onEscape)
 
+        this._nav_prev.removeEventListener('click', this.prev)
+        this._nav_next.removeEventListener('click', this.next)
+
         this._lightbox.removeEventListener('click', this.hide)
         this._lightbox.remove()
 
@@ -172,8 +180,10 @@ export default class Lightbox<T> {
         this._lightbox_inner = null
         this._image = null
         this._groups = {}
-        this._current.group = ''
-        this._current.index = -1
+        this._nav_prev = null
+        this._nav_next = null
+
+        this.setCurrent()
     }
 
     private nav(direction) {
@@ -187,8 +197,7 @@ export default class Lightbox<T> {
 
         this.hide()
 
-        this._current.group = group
-        this._current.index = newIndex + direction
+        this.setCurrent(group, newIndex + direction)
 
         this.show(item.src)
 
@@ -210,11 +219,14 @@ export default class Lightbox<T> {
             nav_prev.classList.add(this.options.nav_prev_class)
             nav_next.classList.add(this.options.nav_next_class)
 
-            nav_prev.addEventListener('click', () => this.prev())
-            nav_next.addEventListener('click', () => this.next())
+            nav_prev.addEventListener('click', this.prev)
+            nav_next.addEventListener('click', this.next)
 
             this._lightbox_inner.appendChild(nav_prev)
             this._lightbox_inner.appendChild(nav_next)
+
+            this._nav_prev = nav_prev
+            this._nav_next = nav_next
         }
 
         document.body.appendChild(this._lightbox)
@@ -249,7 +261,6 @@ export default class Lightbox<T> {
             this._groups[group] = []
         }
 
-
         /*if (legend !== null) {
             this.createLegend(legend)
         }*/
@@ -266,8 +277,7 @@ export default class Lightbox<T> {
         const index: number = this._groups[group].push(item) - 1
 
         const event_handler = (): void => {
-            this._current.group = group
-            this._current.index = index
+            this.setCurrent(group, index)
 
             this.show(src)
         }
@@ -348,6 +358,14 @@ export default class Lightbox<T> {
             height,
             orientation
         }
+    }
+
+    private setCurrent(
+        group: string = '',
+        index: number = -1
+    ) {
+        this._current.group = group
+        this._current.index = index
     }
 }
 
