@@ -1,11 +1,33 @@
+import LightboxItem from './LightboxItem'
+
 export default class LightboxList {
 
-    public name: string
+    public items: LightboxItem[] = []
 
-    public items: LightboxListItem[]
+    public add(item: ILightboxItemObject|LightboxItem): LightboxItem {
+        if (!(item instanceof LightboxItem)) {
+            const {el, src, handler} = item as ILightboxItemObject
 
-    public add(item: LightboxListItem) {
-        this.items.push(item)
+            item = new LightboxItem(el, src, handler)
+        }
+
+        this.items.push(item as LightboxItem)
+
+        return <LightboxItem>item
+    }
+
+    public find(index: number): LightboxItem|null {
+        return this.items[index] || null
+    }
+
+    public remove(index: number): LightboxItem|null {
+        const item = this.find(index)
+
+        if (item !== null) {
+            delete this.items[index]
+        }
+
+        return item
     }
 
 }

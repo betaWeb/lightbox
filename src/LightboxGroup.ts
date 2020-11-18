@@ -1,8 +1,13 @@
+import LightboxList from './LightboxList'
+import LightboxItem from "./LightboxItem";
+
 export default class LightboxGroup {
 
-    public groups: LightboxListGroup = {}
+    public static readonly DEFAULT_NAME: string = "_DEFAULT"
 
-    public all(): LightboxListGroup {
+    public groups: ILightboxListGroup = {}
+
+    public all(): ILightboxListGroup {
         return this.groups
     }
 
@@ -10,29 +15,31 @@ export default class LightboxGroup {
         return this.groups[name] !== undefined
     }
 
+    public get(name: string): LightboxList {
+        return this.groups[name]
+    }
+
     public create(name: string): void {
         if (!this.has(name)) {
-            this.groups[name] = []
+            this.groups[name] = new LightboxList()
         }
     }
 
-    public addTo(name: string, item: LightboxListItem): LightboxListItem {
-        if (!this.groups[name]) {
-            this.create(name)
-        }
+    public addTo(name: string, item: ILightboxItemObject|LightboxItem): LightboxItem {
+        this.create(name)
 
-        this.groups[name].push(item)
+        this.get(name).add(item)
 
-        return item
+        return item as LightboxItem
     }
 
-    public retrieve(name: string, index: number): LightboxListItem|null {
-        return this.groups[name][index] || null
+    public retrieve(name: string, index: number): LightboxItem|null {
+        return this.get(name).find(index)
     }
 
     public size(name: string): number {
         try {
-            return this.groups[name].length
+            return this.get(name).items.length
         } catch {
             return 0
         }

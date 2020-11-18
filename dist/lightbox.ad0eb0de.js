@@ -333,12 +333,151 @@ parcelRequire = function (modules, cache, entry, globalName) {
 
     exports.aspectRatioFit = aspectRatioFit;
   }, {}],
-  "LightboxGroup.ts": [function (require, module, exports) {
+  "LightboxItem.ts": [function (require, module, exports) {
     "use strict";
+
+    var __importDefault = this && this.__importDefault || function (mod) {
+      return mod && mod.__esModule ? mod : {
+        "default": mod
+      };
+    };
 
     Object.defineProperty(exports, "__esModule", {
       value: true
     });
+
+    var LightboxGroup_1 = __importDefault(require("./LightboxGroup"));
+
+    var LightboxItem = function () {
+      function LightboxItem(el, src, handler) {
+        if (handler === void 0) {
+          handler = null;
+        }
+
+        this.el = null;
+        this.src = null;
+        this.handler = null;
+        this._group = null;
+        this._index = null;
+        this.el = el;
+        this.src = src;
+        this.handler = handler;
+      }
+
+      Object.defineProperty(LightboxItem.prototype, "group", {
+        get: function get() {
+          return this._group;
+        },
+        set: function set(group) {
+          this._group = group || LightboxGroup_1.default.DEFAULT_NAME;
+        },
+        enumerable: false,
+        configurable: true
+      });
+      Object.defineProperty(LightboxItem.prototype, "index", {
+        get: function get() {
+          return this._index;
+        },
+        set: function set(index) {
+          this._index = index;
+        },
+        enumerable: false,
+        configurable: true
+      });
+
+      LightboxItem.prototype.addEvent = function (handler) {
+        if (handler === void 0) {
+          handler = null;
+        }
+
+        if (handler !== null) {
+          this.handler = handler;
+        }
+
+        this.el.addEventListener('click', this.handler);
+        return this;
+      };
+
+      LightboxItem.prototype.removeEvent = function () {
+        this.el.removeEventListener('click', this.handler);
+        return this;
+      };
+
+      return LightboxItem;
+    }();
+
+    exports.default = LightboxItem;
+  }, {
+    "./LightboxGroup": "LightboxGroup.ts"
+  }],
+  "LightboxList.ts": [function (require, module, exports) {
+    "use strict";
+
+    var __importDefault = this && this.__importDefault || function (mod) {
+      return mod && mod.__esModule ? mod : {
+        "default": mod
+      };
+    };
+
+    Object.defineProperty(exports, "__esModule", {
+      value: true
+    });
+
+    var LightboxItem_1 = __importDefault(require("./LightboxItem"));
+
+    var LightboxList = function () {
+      function LightboxList() {
+        this.items = [];
+      }
+
+      LightboxList.prototype.add = function (item) {
+        if (!(item instanceof LightboxItem_1.default)) {
+          var _a = item,
+              el = _a.el,
+              src = _a.src,
+              handler = _a.handler;
+          item = new LightboxItem_1.default(el, src, handler);
+        }
+
+        this.items.push(item);
+        return item;
+      };
+
+      LightboxList.prototype.find = function (index) {
+        return this.items[index] || null;
+      };
+
+      LightboxList.prototype.remove = function (index) {
+        var item = this.find(index);
+
+        if (item !== null) {
+          delete this.items[index];
+        }
+
+        return item;
+      };
+
+      return LightboxList;
+    }();
+
+    exports.default = LightboxList;
+  }, {
+    "./LightboxItem": "LightboxItem.ts"
+  }],
+  "LightboxGroup.ts": [function (require, module, exports) {
+    "use strict";
+
+    var __importDefault = this && this.__importDefault || function (mod) {
+      return mod && mod.__esModule ? mod : {
+        "default": mod
+      };
+    };
+
+    Object.defineProperty(exports, "__esModule", {
+      value: true
+    });
+
+    var LightboxList_1 = __importDefault(require("./LightboxList"));
 
     var LightboxGroup = function () {
       function LightboxGroup() {
@@ -353,80 +492,42 @@ parcelRequire = function (modules, cache, entry, globalName) {
         return this.groups[name] !== undefined;
       };
 
+      LightboxGroup.prototype.get = function (name) {
+        return this.groups[name];
+      };
+
       LightboxGroup.prototype.create = function (name) {
         if (!this.has(name)) {
-          this.groups[name] = [];
+          this.groups[name] = new LightboxList_1.default();
         }
       };
 
       LightboxGroup.prototype.addTo = function (name, item) {
-        if (!this.groups[name]) {
-          this.create(name);
-        }
-
-        this.groups[name].push(item);
+        this.create(name);
+        this.get(name).add(item);
         return item;
       };
 
       LightboxGroup.prototype.retrieve = function (name, index) {
-        return this.groups[name][index] || null;
+        return this.get(name).find(index);
       };
 
       LightboxGroup.prototype.size = function (name) {
         try {
-          return this.groups[name].length;
+          return this.get(name).items.length;
         } catch (_a) {
           return 0;
         }
       };
 
+      LightboxGroup.DEFAULT_NAME = "_DEFAULT";
       return LightboxGroup;
     }();
 
     exports.default = LightboxGroup;
-  }, {}],
-  "LightboxItem.ts": [function (require, module, exports) {
-    "use strict";
-
-    Object.defineProperty(exports, "__esModule", {
-      value: true
-    });
-
-    var LightboxItem = function () {
-      function LightboxItem(el, src, handler) {
-        if (handler === void 0) {
-          handler = null;
-        }
-
-        this.el = null;
-        this.src = null;
-        this.handler = null;
-        this.el = el;
-        this.src = src;
-        this.handler = handler;
-      }
-
-      LightboxItem.prototype.addEvent = function (handler) {
-        if (handler === void 0) {
-          handler = null;
-        }
-
-        if (handler !== null) {
-          this.handler = handler;
-        }
-
-        this.el.addEventListener('click', this.handler);
-      };
-
-      LightboxItem.prototype.removeEvent = function () {
-        this.el.removeEventListener('click', this.handler);
-      };
-
-      return LightboxItem;
-    }();
-
-    exports.default = LightboxItem;
-  }, {}],
+  }, {
+    "./LightboxList": "LightboxList.ts"
+  }],
   "Lightbox.ts": [function (require, module, exports) {
     "use strict";
 
@@ -599,11 +700,11 @@ parcelRequire = function (modules, cache, entry, globalName) {
       value: true
     });
 
-    var _utils_1 = require("~utils");
+    var utils_1 = require("./utils");
 
-    var _LightboxGroup_1 = __importDefault(require("~LightboxGroup"));
+    var LightboxGroup_1 = __importDefault(require("./LightboxGroup"));
 
-    var _LightboxItem_1 = __importDefault(require("~LightboxItem"));
+    var LightboxItem_1 = __importDefault(require("./LightboxItem"));
 
     var Lightbox = function () {
       function Lightbox(options) {
@@ -617,10 +718,7 @@ parcelRequire = function (modules, cache, entry, globalName) {
         this._image = null;
         this._nav_prev = null;
         this._nav_next = null;
-        this._current = {
-          group: '',
-          index: -1
-        };
+        this._current = null;
         this.options = __assign(__assign({}, Lightbox.default_options), options);
         this.elements = document.querySelectorAll(this.options.selector);
 
@@ -628,7 +726,7 @@ parcelRequire = function (modules, cache, entry, globalName) {
           throw new Error('Lightbox::constructor - no elements found');
         }
 
-        this._groups = new _LightboxGroup_1.default();
+        this._groups = new LightboxGroup_1.default();
         this.hide = this.hide.bind(this);
         this.prev = this.prev.bind(this);
         this.next = this.next.bind(this);
@@ -706,7 +804,7 @@ parcelRequire = function (modules, cache, entry, globalName) {
 
         this._lightbox_inner.style.backgroundImage = null;
         this._image = null;
-        this.setCurrent();
+        this.setCurrent(null);
         return this;
       };
 
@@ -731,7 +829,7 @@ parcelRequire = function (modules, cache, entry, globalName) {
           }
         }
 
-        window.removeEventListener('resize', _utils_1.debounce(this.onResize, 300));
+        window.removeEventListener('resize', utils_1.debounce(this.onResize, 300));
         window.removeEventListener('keyup', this.onEscape);
 
         this._nav_prev.removeEventListener('click', this.prev);
@@ -754,7 +852,7 @@ parcelRequire = function (modules, cache, entry, globalName) {
         this._groups = null;
         this._nav_prev = null;
         this._nav_next = null;
-        this.setCurrent();
+        this.setCurrent(null);
       };
 
       Lightbox.prototype.nav = function (direction) {
@@ -768,9 +866,12 @@ parcelRequire = function (modules, cache, entry, globalName) {
 
         var item = this._groups.retrieve(group, newIndex + direction);
 
-        this.hide();
-        this.setCurrent(group, newIndex + direction);
-        this.show(item.src);
+        if (item !== null) {
+          this.hide();
+          this.setCurrent(item);
+          this.show(item.src);
+        }
+
         return this;
       };
 
@@ -807,7 +908,7 @@ parcelRequire = function (modules, cache, entry, globalName) {
       Lightbox.prototype.attachEvents = function () {
         var _this = this;
 
-        window.addEventListener('resize', _utils_1.debounce(this.onResize, 300));
+        window.addEventListener('resize', utils_1.debounce(this.onResize, 300));
         window.addEventListener('keyup', this.onEscape);
         this.createLightBox();
 
@@ -844,26 +945,24 @@ parcelRequire = function (modules, cache, entry, globalName) {
 
       Lightbox.prototype.storeElement = function (el) {
         return __awaiter(this, void 0, Promise, function () {
-          var src, group, lightboxItem, index, event_handler;
+          var src, group, lightboxItem;
 
           var _this = this;
 
           return __generator(this, function (_a) {
             src = el.constructor === HTMLImageElement ? el.src : el.dataset.src;
-            group = el.dataset.group || 'default';
+            group = el.dataset.group || LightboxGroup_1.default.DEFAULT_NAME;
 
             this._groups.create(group);
 
-            lightboxItem = new _LightboxItem_1.default(el, src);
-            index = this._groups.size(group);
-
-            event_handler = function event_handler() {
-              _this.setCurrent(group, index);
+            lightboxItem = new LightboxItem_1.default(el, src);
+            lightboxItem.group = group;
+            lightboxItem.index = this._groups.size(group);
+            lightboxItem.addEvent(function () {
+              _this.setCurrent(lightboxItem);
 
               _this.show(src);
-            };
-
-            lightboxItem.addEvent(event_handler);
+            });
 
             this._groups.addTo(group, lightboxItem);
 
@@ -903,7 +1002,7 @@ parcelRequire = function (modules, cache, entry, globalName) {
           var _a, width, height;
 
           return __generator(this, function (_b) {
-            _a = _utils_1.getImageBoundings(this._image, this.options.inner_offset), width = _a.width, height = _a.height;
+            _a = utils_1.getImageBoundings(this._image, this.options.inner_offset), width = _a.width, height = _a.height;
             this._lightbox_inner.style.width = width + 'px';
             this._lightbox_inner.style.height = height + 'px';
             return [2];
@@ -911,17 +1010,8 @@ parcelRequire = function (modules, cache, entry, globalName) {
         });
       };
 
-      Lightbox.prototype.setCurrent = function (group, index) {
-        if (group === void 0) {
-          group = '';
-        }
-
-        if (index === void 0) {
-          index = -1;
-        }
-
-        this._current.group = group;
-        this._current.index = index;
+      Lightbox.prototype.setCurrent = function (item) {
+        this._current = item;
       };
 
       return Lightbox;
@@ -933,9 +1023,9 @@ parcelRequire = function (modules, cache, entry, globalName) {
       window['Lightbox'] = Lightbox;
     }
   }, {
-    "~utils": "utils.ts",
-    "~LightboxGroup": "LightboxGroup.ts",
-    "~LightboxItem": "LightboxItem.ts"
+    "./utils": "utils.ts",
+    "./LightboxGroup": "LightboxGroup.ts",
+    "./LightboxItem": "LightboxItem.ts"
   }],
   "../node_modules/parcel-bundler/src/builtins/hmr-runtime.js": [function (require, module, exports) {
     var global = arguments[3];
@@ -965,7 +1055,7 @@ parcelRequire = function (modules, cache, entry, globalName) {
     if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
       var hostname = "" || location.hostname;
       var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-      var ws = new WebSocket(protocol + '://' + hostname + ':' + "36313" + '/');
+      var ws = new WebSocket(protocol + '://' + hostname + ':' + "40891" + '/');
 
       ws.onmessage = function (event) {
         checkedAssets = {};
@@ -1171,7 +1261,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "36199" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "37339" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

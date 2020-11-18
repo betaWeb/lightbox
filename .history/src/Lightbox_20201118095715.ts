@@ -115,7 +115,7 @@ export default class Lightbox<T> {
 				const entries = Object.values(this._groups[group])
 
 				if (entries.length > 0) {
-					entries.forEach((entry: LightboxListItem): void => {
+					entries.forEach((entry: ILightboxItemObject): void => {
 						if (entry.lightbox_inner) {
 							entry.lightbox_inner.removeEventListener('click', (e: MouseEvent) => e.stopPropagation())
 							entry.lightbox_inner.remove()
@@ -153,7 +153,7 @@ export default class Lightbox<T> {
 			? index - 1 < 0 ? count : index
 			: index + 1 === count ? -1 : index
 
-		let item: LightboxListItem = this._groups[group][newIndex + direction]
+		let item: ILightboxItemObject = this._groups[group][newIndex + direction]
 
 		this.hide()
 
@@ -228,7 +228,7 @@ export default class Lightbox<T> {
 		this._lightbox.addEventListener('click', this.hide)
 		this._lightbox_inner.addEventListener('click', (e: MouseEvent) => e.stopPropagation())
 
-		const item: LightboxListItem = {
+		const item: ILightboxItemObject = {
 			el,
 			lightbox: this._lightbox,
 			lightbox_inner: this._lightbox_inner,

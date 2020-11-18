@@ -9,7 +9,7 @@ declare class Lightbox {
 	private _image: HTMLImageElement
 	private _nav_prev: HTMLDivElement
 	private _nav_next: HTMLDivElement
-	private _current: Current
+	private _current: LightboxItem
 
 	public static get default_options(): Options
 
@@ -36,19 +36,27 @@ declare class Lightbox {
 
 declare class LightboxGroup {
 
-	public groups: LightboxListGroup
+	public static readonly DEFAULT_NAME: string
 
-	public all(): LightboxListGroup
+	public groups: ILightboxListGroup
 
+	public all(): ILightboxListGroup
 	public has(name: string): boolean
-
+	public get(name: string): LightboxList
 	public create(name: string): void
-
-	public addTo(name: string, item: LightboxListItem): LightboxListItem
-
-	public retrieve(name: string, index: number): LightboxListItem|null
-
+	public addTo(name: string, item: ILightboxItemObject|LightboxItem): LightboxItem
+	public retrieve(name: string, index: number): LightboxItem|null
 	public size(name: string): number
+
+}
+
+declare class LightboxList {
+
+	public items: LightboxItem[]
+
+	public add(item: ILightboxItemObject|LightboxItem): LightboxItem
+	public find(index: number): LightboxItem|null
+	public remove(index: number): LightboxItem|null
 
 }
 
@@ -57,11 +65,29 @@ declare class LightboxItem {
 	public el: HTMLElement
 	public src: string
 	public handler: Function
+	private _group: string
+	private _index: number
 
 	constructor(el: HTMLElement, src: string, handler: EventListener)
 
-	public addEvent(handler: EventListener|null): void
-	public removeEvent(): void
+	public get group(): string
+	public get index(): number
+
+	public set group(group: string)
+	public set index(index: number)
+
+	public addEvent(handler: EventListener|null): this
+	public removeEvent(): this
+}
+
+declare interface ILightboxListGroup {
+	[key: string]: LightboxList
+}
+
+declare interface ILightboxItemObject {
+	el: HTMLElement
+	src: string
+	handler?: EventListener
 }
 
 declare type Options = {
@@ -80,16 +106,6 @@ declare type Options = {
 	nav_next_class: string
 }
 
-declare interface LightboxListGroup {
-	[key: string]: LightboxListItem[]
-}
-
-declare interface LightboxListItem {
-	el: HTMLElement
-	src: string
-	event_handler?: Function
-}
-
 declare type AspectRatio = {
 	ratio: number
 	width: number
@@ -100,9 +116,4 @@ declare type AspectRatio = {
 declare type ImageBoundings = {
 	width: number
 	height: number
-}
-
-declare type Current = {
-	group: string
-	index: number
 }

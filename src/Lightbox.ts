@@ -1,4 +1,4 @@
-import {aspectRatioFit, debounce, getImageBoundings} from "./utils";
+import { debounce, getImageBoundings} from "./utils";
 import LightboxGroup from "./LightboxGroup";
 import LightboxItem from "./LightboxItem";
 
@@ -20,10 +20,7 @@ export default class Lightbox {
 
 	private _nav_next: HTMLDivElement = null
 
-	private _current: Current = {
-		group: '',
-		index: -1
-	}
+	private _current: LightboxItem = null
 
 	public static get default_options(): Options {
 		return {
@@ -100,7 +97,7 @@ export default class Lightbox {
 		this._lightbox_inner.style.backgroundImage = null
 		this._image = null
 
-		this.setCurrent()
+		this.setCurrent(null)
 
 		return this
 	}
@@ -145,7 +142,7 @@ export default class Lightbox {
 		this._nav_prev = null
 		this._nav_next = null
 
-		this.setCurrent()
+		this.setCurrent(null)
 	}
 
 	private nav(direction: number): this {
@@ -155,13 +152,15 @@ export default class Lightbox {
 			? index - 1 < 0 ? count : index
 			: index + 1 === count ? -1 : index
 
-		let item: LightboxListItem = this._groups.retrieve(group, newIndex + direction)
+		let item: LightboxItem = this._groups.retrieve(group, newIndex + direction)
 
-		this.hide()
+		if (item !== null) {
+			this.hide()
 
-		this.setCurrent(group, newIndex + direction)
+			this.setCurrent(item)
 
-		this.show(item.src)
+			this.show(item.src)
+		}
 
 		return this
 	}
@@ -222,7 +221,7 @@ export default class Lightbox {
 			? (el as HTMLImageElement).src
 			: el.dataset.src
 
-		const group = el.dataset.group || 'default'
+		const group = el.dataset.group || LightboxGroup.DEFAULT_NAME
 		// const legend = el.dataset.legend || null
 
 		this._groups.create(group)
@@ -232,15 +231,15 @@ export default class Lightbox {
 		}*/
 
 		const lightboxItem = new LightboxItem(el, src)
-		const index = this._groups.size(group)
 
-		const event_handler = (): void => {
-			this.setCurrent(group, index)
+		lightboxItem.group = group
+		lightboxItem.index = this._groups.size(group)
+
+		lightboxItem.addEvent((): void => {
+			this.setCurrent(lightboxItem)
 
 			this.show(src)
-		}
-
-		lightboxItem.addEvent(event_handler)
+		})
 
 		this._groups.addTo(group, lightboxItem)
 	}
@@ -267,12 +266,8 @@ export default class Lightbox {
 		this._lightbox_inner.style.height = height + 'px'
 	}
 
-	private setCurrent(
-		group: string = '',
-		index: number = -1
-	): void {
-		this._current.group = group
-		this._current.index = index
+	private setCurrent(item: LightboxItem): void {
+		this._current = item
 	}
 }
 
