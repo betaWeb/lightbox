@@ -244,7 +244,7 @@ parcelRequire = function (modules, cache, entry, globalName) {
     Object.defineProperty(exports, "__esModule", {
       value: true
     });
-    exports.debounce = void 0;
+    exports.aspectRatioFit = exports.getImageBoundings = exports.debounce = void 0;
 
     function debounce(callback, delay) {
       var timer;
@@ -259,6 +259,173 @@ parcelRequire = function (modules, cache, entry, globalName) {
     }
 
     exports.debounce = debounce;
+
+    function getImageBoundings(image, offset) {
+      if (offset === void 0) {
+        offset = 0;
+      }
+
+      var naturalWidth = 0;
+      var naturalHeight = 0;
+      var offsetWidth = 0;
+      var offsetHeight = 0;
+
+      if (image.constructor === HTMLImageElement) {
+        naturalWidth = image.naturalWidth;
+        naturalHeight = image.naturalHeight;
+      } else {
+        naturalWidth = image.clientWidth;
+        naturalHeight = image.clientHeight;
+      }
+
+      var _a = aspectRatioFit(naturalWidth, naturalHeight, window.innerWidth, window.innerHeight),
+          width = _a.width,
+          height = _a.height,
+          orientation = _a.orientation;
+
+      switch (orientation) {
+        case 'landscape':
+          offsetWidth = offset;
+          break;
+
+        case 'portrait':
+          offsetHeight = offset;
+          break;
+
+        case 'even':
+          offsetWidth = offset;
+          offsetHeight = offset;
+          break;
+      }
+
+      return {
+        width: width - 2 * offsetWidth,
+        height: height - 2 * offsetHeight
+      };
+    }
+
+    exports.getImageBoundings = getImageBoundings;
+
+    function aspectRatioFit(srcWidth, srcHeight, maxWidth, maxHeight) {
+      var ratio = Math.min(maxWidth / srcWidth, maxHeight / srcHeight);
+      var orientation = 'even';
+
+      if (srcWidth > srcHeight) {
+        orientation = 'landscape';
+      } else if (srcWidth < srcHeight) {
+        orientation = 'portrait';
+      }
+
+      var width = srcWidth * ratio;
+      var height = srcHeight * ratio;
+
+      if (width <= maxWidth || height <= maxHeight) {
+        orientation = 'even';
+      }
+
+      return {
+        ratio: ratio,
+        width: width,
+        height: height,
+        orientation: orientation
+      };
+    }
+
+    exports.aspectRatioFit = aspectRatioFit;
+  }, {}],
+  "LightboxGroup.ts": [function (require, module, exports) {
+    "use strict";
+
+    Object.defineProperty(exports, "__esModule", {
+      value: true
+    });
+
+    var LightboxGroup = function () {
+      function LightboxGroup() {
+        this.groups = {};
+      }
+
+      LightboxGroup.prototype.all = function () {
+        return this.groups;
+      };
+
+      LightboxGroup.prototype.has = function (name) {
+        return this.groups[name] !== undefined;
+      };
+
+      LightboxGroup.prototype.create = function (name) {
+        if (!this.has(name)) {
+          this.groups[name] = [];
+        }
+      };
+
+      LightboxGroup.prototype.addTo = function (name, item) {
+        if (!this.groups[name]) {
+          this.create(name);
+        }
+
+        this.groups[name].push(item);
+        return item;
+      };
+
+      LightboxGroup.prototype.retrieve = function (name, index) {
+        return this.groups[name][index] || null;
+      };
+
+      LightboxGroup.prototype.size = function (name) {
+        try {
+          return this.groups[name].length;
+        } catch (_a) {
+          return 0;
+        }
+      };
+
+      return LightboxGroup;
+    }();
+
+    exports.default = LightboxGroup;
+  }, {}],
+  "LightboxItem.ts": [function (require, module, exports) {
+    "use strict";
+
+    Object.defineProperty(exports, "__esModule", {
+      value: true
+    });
+
+    var LightboxItem = function () {
+      function LightboxItem(el, src, handler) {
+        if (handler === void 0) {
+          handler = null;
+        }
+
+        this.el = null;
+        this.src = null;
+        this.handler = null;
+        this.el = el;
+        this.src = src;
+        this.handler = handler;
+      }
+
+      LightboxItem.prototype.addEvent = function (handler) {
+        if (handler === void 0) {
+          handler = null;
+        }
+
+        if (handler !== null) {
+          this.handler = handler;
+        }
+
+        this.el.addEventListener('click', this.handler);
+      };
+
+      LightboxItem.prototype.removeEvent = function () {
+        this.el.removeEventListener('click', this.handler);
+      };
+
+      return LightboxItem;
+    }();
+
+    exports.default = LightboxItem;
   }, {}],
   "Lightbox.ts": [function (require, module, exports) {
     "use strict";
@@ -422,11 +589,21 @@ parcelRequire = function (modules, cache, entry, globalName) {
       }
     };
 
+    var __importDefault = this && this.__importDefault || function (mod) {
+      return mod && mod.__esModule ? mod : {
+        "default": mod
+      };
+    };
+
     Object.defineProperty(exports, "__esModule", {
       value: true
     });
 
-    var utils_1 = require("./utils");
+    var _utils_1 = require("~utils");
+
+    var _LightboxGroup_1 = __importDefault(require("~LightboxGroup"));
+
+    var _LightboxItem_1 = __importDefault(require("~LightboxItem"));
 
     var Lightbox = function () {
       function Lightbox(options) {
@@ -434,7 +611,7 @@ parcelRequire = function (modules, cache, entry, globalName) {
           options = {};
         }
 
-        this._groups = {};
+        this._groups = null;
         this._lightbox = null;
         this._lightbox_inner = null;
         this._image = null;
@@ -451,6 +628,7 @@ parcelRequire = function (modules, cache, entry, globalName) {
           throw new Error('Lightbox::constructor - no elements found');
         }
 
+        this._groups = new _LightboxGroup_1.default();
         this.hide = this.hide.bind(this);
         this.prev = this.prev.bind(this);
         this.next = this.next.bind(this);
@@ -541,31 +719,30 @@ parcelRequire = function (modules, cache, entry, globalName) {
       };
 
       Lightbox.prototype.destroy = function () {
-        for (var group in this._groups) {
+        for (var group in this._groups.all()) {
           if (this._groups.hasOwnProperty(group)) {
             var entries = Object.values(this._groups[group]);
 
             if (entries.length > 0) {
               entries.forEach(function (entry) {
-                if (entry.lightbox_inner) {
-                  entry.lightbox_inner.removeEventListener('click', function (e) {
-                    return e.stopPropagation();
-                  });
-                  entry.lightbox_inner.remove();
-                }
-
-                entry.el.removeEventListener('click', entry.event_handler);
+                entry.removeEvent();
               });
             }
           }
         }
 
-        window.removeEventListener('resize', utils_1.debounce(this.onResize, 300));
+        window.removeEventListener('resize', _utils_1.debounce(this.onResize, 300));
         window.removeEventListener('keyup', this.onEscape);
 
         this._nav_prev.removeEventListener('click', this.prev);
 
         this._nav_next.removeEventListener('click', this.next);
+
+        this._lightbox_inner.removeEventListener('click', function (e) {
+          return e.stopPropagation();
+        });
+
+        this._lightbox_inner.remove();
 
         this._lightbox.removeEventListener('click', this.hide);
 
@@ -574,7 +751,7 @@ parcelRequire = function (modules, cache, entry, globalName) {
         this._lightbox = null;
         this._lightbox_inner = null;
         this._image = null;
-        this._groups = {};
+        this._groups = null;
         this._nav_prev = null;
         this._nav_next = null;
         this.setCurrent();
@@ -584,9 +761,13 @@ parcelRequire = function (modules, cache, entry, globalName) {
         var _a = this._current,
             group = _a.group,
             index = _a.index;
-        var count = Object.keys(this._groups[group]).length;
+
+        var count = this._groups.size(group);
+
         var newIndex = direction < 0 ? index - 1 < 0 ? count : index : index + 1 === count ? -1 : index;
-        var item = this._groups[group][newIndex + direction];
+
+        var item = this._groups.retrieve(group, newIndex + direction);
+
         this.hide();
         this.setCurrent(group, newIndex + direction);
         this.show(item.src);
@@ -626,9 +807,16 @@ parcelRequire = function (modules, cache, entry, globalName) {
       Lightbox.prototype.attachEvents = function () {
         var _this = this;
 
-        window.addEventListener('resize', utils_1.debounce(this.onResize, 300));
+        window.addEventListener('resize', _utils_1.debounce(this.onResize, 300));
         window.addEventListener('keyup', this.onEscape);
         this.createLightBox();
+
+        this._lightbox.addEventListener('click', this.hide);
+
+        this._lightbox_inner.addEventListener('click', function (e) {
+          return e.stopPropagation();
+        });
+
         this.elements.forEach(function (el) {
           return __awaiter(_this, void 0, Promise, function () {
             return __generator(this, function (_a) {
@@ -656,7 +844,7 @@ parcelRequire = function (modules, cache, entry, globalName) {
 
       Lightbox.prototype.storeElement = function (el) {
         return __awaiter(this, void 0, Promise, function () {
-          var src, group, item, index, event_handler;
+          var src, group, lightboxItem, index, event_handler;
 
           var _this = this;
 
@@ -664,23 +852,10 @@ parcelRequire = function (modules, cache, entry, globalName) {
             src = el.constructor === HTMLImageElement ? el.src : el.dataset.src;
             group = el.dataset.group || 'default';
 
-            if (!this._groups[group]) {
-              this._groups[group] = [];
-            }
+            this._groups.create(group);
 
-            this._lightbox.addEventListener('click', this.hide);
-
-            this._lightbox_inner.addEventListener('click', function (e) {
-              return e.stopPropagation();
-            });
-
-            item = {
-              el: el,
-              lightbox: this._lightbox,
-              lightbox_inner: this._lightbox_inner,
-              src: src
-            };
-            index = this._groups[group].push(item) - 1;
+            lightboxItem = new _LightboxItem_1.default(el, src);
+            index = this._groups.size(group);
 
             event_handler = function event_handler() {
               _this.setCurrent(group, index);
@@ -688,8 +863,10 @@ parcelRequire = function (modules, cache, entry, globalName) {
               _this.show(src);
             };
 
-            this._groups[group][index].event_handler = event_handler;
-            el.addEventListener('click', event_handler);
+            lightboxItem.addEvent(event_handler);
+
+            this._groups.addTo(group, lightboxItem);
+
             return [2];
           });
         });
@@ -723,61 +900,15 @@ parcelRequire = function (modules, cache, entry, globalName) {
 
       Lightbox.prototype.setInnerBoundings = function () {
         return __awaiter(this, void 0, Promise, function () {
-          var _a, naturalWidth, naturalHeight, ratio, width, height, orientation, inner_offset, offsetWidth, offsetHeight;
+          var _a, width, height;
 
           return __generator(this, function (_b) {
-            _a = this._image, naturalWidth = _a.naturalWidth, naturalHeight = _a.naturalHeight;
-            ratio = this.aspectRatioFit(naturalWidth, naturalHeight, window.innerWidth, window.innerHeight);
-            width = ratio.width, height = ratio.height, orientation = ratio.orientation;
-            inner_offset = this.options.inner_offset;
-            offsetWidth = 0;
-            offsetHeight = 0;
-
-            switch (orientation) {
-              case 'landscape':
-                offsetWidth = inner_offset;
-                break;
-
-              case 'portrait':
-                offsetHeight = inner_offset;
-                break;
-
-              case 'even':
-                offsetWidth = inner_offset;
-                offsetHeight = inner_offset;
-                break;
-            }
-
-            this._lightbox_inner.style.width = width - 2 * offsetWidth + "px";
-            this._lightbox_inner.style.height = height - 2 * offsetHeight + "px";
+            _a = _utils_1.getImageBoundings(this._image, this.options.inner_offset), width = _a.width, height = _a.height;
+            this._lightbox_inner.style.width = width + 'px';
+            this._lightbox_inner.style.height = height + 'px';
             return [2];
           });
         });
-      };
-
-      Lightbox.prototype.aspectRatioFit = function (srcWidth, srcHeight, maxWidth, maxHeight) {
-        var ratio = Math.min(maxWidth / srcWidth, maxHeight / srcHeight);
-        var orientation = 'even';
-
-        if (srcWidth > srcHeight) {
-          orientation = 'landscape';
-        } else if (srcWidth < srcHeight) {
-          orientation = 'portrait';
-        }
-
-        var width = srcWidth * ratio;
-        var height = srcHeight * ratio;
-
-        if (width <= maxWidth || height <= maxHeight) {
-          orientation = 'even';
-        }
-
-        return {
-          ratio: ratio,
-          width: width,
-          height: height,
-          orientation: orientation
-        };
       };
 
       Lightbox.prototype.setCurrent = function (group, index) {
@@ -802,7 +933,9 @@ parcelRequire = function (modules, cache, entry, globalName) {
       window['Lightbox'] = Lightbox;
     }
   }, {
-    "./utils": "utils.ts"
+    "~utils": "utils.ts",
+    "~LightboxGroup": "LightboxGroup.ts",
+    "~LightboxItem": "LightboxItem.ts"
   }],
   "../node_modules/parcel-bundler/src/builtins/hmr-runtime.js": [function (require, module, exports) {
     var global = arguments[3];
@@ -832,7 +965,7 @@ parcelRequire = function (modules, cache, entry, globalName) {
     if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
       var hostname = "" || location.hostname;
       var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-      var ws = new WebSocket(protocol + '://' + hostname + ':' + "56094" + '/');
+      var ws = new WebSocket(protocol + '://' + hostname + ':' + "36313" + '/');
 
       ws.onmessage = function (event) {
         checkedAssets = {};
@@ -1038,7 +1171,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "56096" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "36199" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

@@ -1,12 +1,14 @@
-import { debounce } from "./utils";
+import {aspectRatioFit, debounce, getImageBoundings} from "./utils";
+import LightboxGroup from "./LightboxGroup";
+import LightboxItem from "./LightboxItem";
 
-export default class Lightbox<T> {
+export default class Lightbox {
 
 	public elements: NodeList
 
 	public options: Options
 
-	private _groups: Groups = {}
+	private _groups: LightboxGroup = null
 
 	private _lightbox: HTMLDivElement = null
 
@@ -52,6 +54,8 @@ export default class Lightbox<T> {
 		if (this.elements.length === 0) {
 			throw new Error('Lightbox::constructor - no elements found')
 		}
+
+		this._groups = new LightboxGroup()
 
 		this.hide = this.hide.bind(this)
 		this.prev = this.prev.bind(this)
@@ -110,18 +114,13 @@ export default class Lightbox<T> {
 	}
 
 	public destroy(): void {
-		for (let group in this._groups) {
+		for (let group in this._groups.all()) {
 			if (this._groups.hasOwnProperty(group)) {
 				const entries = Object.values(this._groups[group])
 
 				if (entries.length > 0) {
-					entries.forEach((entry: LightboxListItem): void => {
-						if (entry.lightbox_inner) {
-							entry.lightbox_inner.removeEventListener('click', (e: MouseEvent) => e.stopPropagation())
-							entry.lightbox_inner.remove()
-						}
-
-						entry.el.removeEventListener('click', entry.event_handler as EventListener)
+					entries.forEach((entry: LightboxItem): void => {
+						entry.removeEvent()
 					})
 				}
 			}
@@ -133,13 +132,16 @@ export default class Lightbox<T> {
 		this._nav_prev.removeEventListener('click', this.prev)
 		this._nav_next.removeEventListener('click', this.next)
 
+		this._lightbox_inner.removeEventListener('click', (e: MouseEvent) => e.stopPropagation())
+		this._lightbox_inner.remove()
+
 		this._lightbox.removeEventListener('click', this.hide)
 		this._lightbox.remove()
 
 		this._lightbox = null
 		this._lightbox_inner = null
 		this._image = null
-		this._groups = {}
+		this._groups = null
 		this._nav_prev = null
 		this._nav_next = null
 
@@ -148,12 +150,12 @@ export default class Lightbox<T> {
 
 	private nav(direction: number): this {
 		const { group, index } = this._current
-		const count = Object.keys(this._groups[group]).length
+		const count = this._groups.size(group)
 		const newIndex = direction < 0
 			? index - 1 < 0 ? count : index
 			: index + 1 === count ? -1 : index
 
-		let item: LightboxListItem = this._groups[group][newIndex + direction]
+		let item: LightboxListItem = this._groups.retrieve(group, newIndex + direction)
 
 		this.hide()
 
@@ -198,6 +200,9 @@ export default class Lightbox<T> {
 
 		this.createLightBox()
 
+		this._lightbox.addEventListener('click', this.hide)
+		this._lightbox_inner.addEventListener('click', (e: MouseEvent) => e.stopPropagation())
+
 		this.elements.forEach(async (el: HTMLElement): Promise<void> => {
 			await this.storeElement(el)
 		})
@@ -220,24 +225,14 @@ export default class Lightbox<T> {
 		const group = el.dataset.group || 'default'
 		// const legend = el.dataset.legend || null
 
-		if (!this._groups[group]) {
-			this._groups[group] = []
-		}
+		this._groups.create(group)
 
 		/*if (legend !== null) {
 				this.createLegend(legend)
 		}*/
 
-		this._lightbox.addEventListener('click', this.hide)
-		this._lightbox_inner.addEventListener('click', (e: MouseEvent) => e.stopPropagation())
-
-		const item: LightboxListItem = {
-			el,
-			lightbox: this._lightbox,
-			lightbox_inner: this._lightbox_inner,
-			src
-		}
-		const index: number = this._groups[group].push(item) - 1
+		const lightboxItem = new LightboxItem(el, src)
+		const index = this._groups.size(group)
 
 		const event_handler = (): void => {
 			this.setCurrent(group, index)
@@ -245,9 +240,9 @@ export default class Lightbox<T> {
 			this.show(src)
 		}
 
-		this._groups[group][index].event_handler = event_handler
+		lightboxItem.addEvent(event_handler)
 
-		el.addEventListener('click', event_handler as EventListener)
+		this._groups.addTo(group, lightboxItem)
 	}
 
 	private onEscape(e: KeyboardEvent): void {
@@ -263,64 +258,13 @@ export default class Lightbox<T> {
 	}
 
 	private async setInnerBoundings(): Promise<void> {
-		const { naturalWidth, naturalHeight } = this._image
-		const ratio = this.aspectRatioFit(
-			naturalWidth,
-			naturalHeight,
-			window.innerWidth,
-			window.innerHeight
-		) as AspectRatio
-		const { width, height, orientation } = ratio
-		const { inner_offset } = this.options
+		const {width, height}: ImageBoundings = getImageBoundings(
+			this._image,
+			this.options.inner_offset
+		)
 
-		let offsetWidth = 0
-		let offsetHeight = 0
-
-		switch (orientation) {
-			case 'landscape':
-				offsetWidth = inner_offset
-				break
-			case 'portrait':
-				offsetHeight = inner_offset
-				break
-			case 'even':
-				offsetWidth = inner_offset
-				offsetHeight = inner_offset
-				break
-		}
-
-		this._lightbox_inner.style.width = `${width - (2 * offsetWidth)}px`
-		this._lightbox_inner.style.height = `${height - (2 * offsetHeight)}px`
-	}
-
-	private aspectRatioFit(
-		srcWidth: number,
-		srcHeight: number,
-		maxWidth: number,
-		maxHeight: number
-	): AspectRatio {
-		let ratio = Math.min(maxWidth / srcWidth, maxHeight / srcHeight)
-		let orientation = 'even'
-
-		if (srcWidth > srcHeight) {
-			orientation = 'landscape'
-		} else if (srcWidth < srcHeight) {
-			orientation = 'portrait'
-		}
-
-		let width = srcWidth * ratio
-		let height = srcHeight * ratio
-
-		if (width <= maxWidth || height <= maxHeight) {
-			orientation = 'even'
-		}
-
-		return {
-			ratio,
-			width,
-			height,
-			orientation
-		}
+		this._lightbox_inner.style.width = width + 'px'
+		this._lightbox_inner.style.height = height + 'px'
 	}
 
 	private setCurrent(

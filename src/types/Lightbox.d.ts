@@ -3,7 +3,7 @@ declare class Lightbox {
 	public elements: NodeList
 	public options: Options
 
-	private _groups: Groups
+	private _groups: LightboxGroup
 	private _lightbox: HTMLDivElement
 	private _lightbox_inner: HTMLDivElement
 	private _image: HTMLImageElement
@@ -34,6 +34,36 @@ declare class Lightbox {
 
 }
 
+declare class LightboxGroup {
+
+	public groups: LightboxListGroup
+
+	public all(): LightboxListGroup
+
+	public has(name: string): boolean
+
+	public create(name: string): void
+
+	public addTo(name: string, item: LightboxListItem): LightboxListItem
+
+	public retrieve(name: string, index: number): LightboxListItem|null
+
+	public size(name: string): number
+
+}
+
+declare class LightboxItem {
+
+	public el: HTMLElement
+	public src: string
+	public handler: Function
+
+	constructor(el: HTMLElement, src: string, handler: EventListener)
+
+	public addEvent(handler: EventListener|null): void
+	public removeEvent(): void
+}
+
 declare type Options = {
 	selector: string
 	lightbox_class: string
@@ -44,18 +74,20 @@ declare type Options = {
 	prevent_scroll: boolean
 	prevent_scroll_class: string
 	prevent_scroll_element: HTMLElement
-	inner_offset: number,
-	nav: boolean,
+	inner_offset: number
+	nav: boolean
 	nav_prev_class: string
 	nav_next_class: string
 }
 
+declare interface LightboxListGroup {
+	[key: string]: LightboxListItem[]
+}
+
 declare interface LightboxListItem {
-	el?: HTMLElement,
+	el: HTMLElement
+	src: string
 	event_handler?: Function
-	lightbox?: HTMLDivElement
-	lightbox_inner?: HTMLDivElement
-	src?: string
 }
 
 declare type AspectRatio = {
@@ -65,8 +97,9 @@ declare type AspectRatio = {
 	orientation: string
 }
 
-declare type Groups = {
-	[key: string]: LightboxListItem[]
+declare type ImageBoundings = {
+	width: number
+	height: number
 }
 
 declare type Current = {
