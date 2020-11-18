@@ -448,7 +448,7 @@ parcelRequire = function (modules, cache, entry, globalName) {
         this.elements = document.querySelectorAll(this.options.selector);
 
         if (this.elements.length === 0) {
-          return;
+          throw new Error('Lightbox::constructor - no elements found');
         }
 
         this.hide = this.hide.bind(this);
@@ -832,7 +832,7 @@ parcelRequire = function (modules, cache, entry, globalName) {
     if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
       var hostname = "" || location.hostname;
       var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-      var ws = new WebSocket(protocol + '://' + hostname + ':' + "37591" + '/');
+      var ws = new WebSocket(protocol + '://' + hostname + ':' + "56094" + '/');
 
       ws.onmessage = function (event) {
         checkedAssets = {};
@@ -1038,7 +1038,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "42257" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "56096" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

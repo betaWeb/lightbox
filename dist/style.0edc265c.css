@@ -1,6 +1,9 @@
 :root {
     --lightbox-black-rgb: 0,0,0;
     --lightbox-white-rgb: 255,255,255;
+    --lightbox-black: rgb(var(--lightbox-black-rgb));
+		--lightbox-white: rgb(var(--lightbox-white-rgb));
+		--lightbox-nav-chevron-color: var(--lightbox-black);
 }
 
 .lightbox {
@@ -39,7 +42,7 @@
      height: 50px;
      border-radius: 50px;
      background-color: rgba(var(--lightbox-black-rgb), .5);
-     box-shadow: 0 0 0 0 var(--lightbox-black-rgb);
+     box-shadow: 0 0 0 0 var(--lightbox-black);
      transform: scale(1);
      animation: pulse 2s infinite;
 }
@@ -64,22 +67,62 @@
     position: fixed;
     top: 0;
     bottom: 0;
-    background-color: rgba(255,255,255,.2);
-    width: 25%;
+    background-color: transparent;
+    width: 20%;
     z-index: 1001;
     opacity: 0;
     cursor: pointer;
-    transition: opacity .3s;
+		transition: opacity .3s;
+}
+
+.lightbox--prev::before,
+.lightbox--next::before {
+	position: absolute;
+	content: '';
+	top: calc(50% - 10px);
+	transform: translate(-50%, -50%);
+	border-color: var(--lightbox-nav-chevron-color);
+	border-style: solid;
+	border-width: 5px 5px 0 0;
+	width: 20px;
+	height: 20px;
+	z-index: 1002;
+}
+
+.lightbox--prev::after,
+.lightbox--next::after {
+	position: absolute;
+	content: '';
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	color: var(--lightbox-black);
+	font-size: 3rem;
+	font-weight: bold;
+	background-color: rgba(var(--lightbox-white-rgb), .4);
+	border-radius: 50%;
+	width: 70px;
+	height: 70px;
+	text-align: center;
+	line-height: 70px;
 }
 
 .lightbox--prev {
     right: auto;
     left: 0;
 }
+.lightbox--prev::before {
+	left: calc(50% - 8px);
+	transform: rotate(-135deg);
+}
 
 .lightbox--next {
     right: 0;
     left: auto;
+}
+.lightbox--next::before {
+	left: calc(50% - 15px);
+	transform: rotate(45deg);
 }
 
 .lightbox--prev:hover,
