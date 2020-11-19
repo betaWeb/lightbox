@@ -62,6 +62,11 @@
     cursor: default;
 }
 
+.lightbox--prev.is-hidden,
+.lightbox--next.is-hidden {
+    display: none;
+}
+
 .lightbox--prev,
 .lightbox--next {
     position: fixed;

@@ -1,4 +1,4 @@
-import { debounce, getImageBoundings} from "./utils";
+import {debounce, getElementSrc, getImageBoundings} from "./utils";
 import LightboxGroup from "./LightboxGroup";
 import LightboxItem from "./LightboxItem";
 
@@ -110,6 +110,53 @@ export default class Lightbox {
 		return this.nav(1)
 	}
 
+	public add(el: HTMLElement|HTMLImageElement): this {
+		this.storeElement(el)
+
+		return this
+	}
+
+	public remove(el: HTMLElement|HTMLImageElement): LightboxItem|null {
+		const group = el.dataset.group || LightboxGroup.DEFAULT_NAME
+		const item = this._groups.retrieve(group, getElementSrc(el))
+
+		if (item !== null) {
+			this._groups.get(group).remove(item.index)
+
+			if (this._groups.size(group) === 0) {
+				this._groups.remove(group)
+			}
+
+			return item
+		}
+
+		return null
+	}
+
+	public refresh(groupName: string = null): object {
+		let altered = {};
+
+		if (groupName === null) {
+			const groups = this._groups.all()
+
+			for (let name in groups) {
+				if (groups.hasOwnProperty(name)) {
+					altered = {
+						...altered,
+						...this.refreshGroup(name)
+					}
+				}
+			}
+		} else {
+			altered = {
+				...altered,
+				...this.refreshGroup(groupName)
+			}
+		}
+
+		return altered
+	}
+
 	public destroy(): void {
 		for (let group in this._groups.all()) {
 			if (this._groups.hasOwnProperty(group)) {
@@ -165,6 +212,35 @@ export default class Lightbox {
 		return this
 	}
 
+	private refreshGroup(groupName: string): object {
+		const elements = Array.from(
+			document.querySelectorAll(
+				`${this.options.selector}[data-group="${groupName}"]`
+			)
+		)
+		const group = this._groups.get(groupName)
+		const items = group.items
+		let added = []
+		let removed = []
+
+		if (elements.length !== items.length) {
+			added = elements.filter(
+				el => !items.map(i => i.src).includes(getElementSrc(el))
+			)
+
+			removed = items.filter(
+				item => !elements.map(getElementSrc).includes(item.src)
+			)
+
+			removed.forEach(({index}: LightboxItem) => group.remove(index))
+			added.forEach((el: HTMLElement) => this.storeElement(el))
+
+			items.forEach((item: LightboxItem, index: number) => item.index = index)
+		}
+
+		return {[groupName]: {added, removed}}
+	}
+
 	private createLightBox(): void {
 		this._lightbox_inner = document.createElement('div')
 		this._lightbox_inner.classList.add(this.options.lightbox_inner_class)
@@ -216,11 +292,8 @@ export default class Lightbox {
 		this._lightbox_inner.appendChild(div)
 	}
 
-	private async storeElement(el: HTMLElement): Promise<void> {
-		const src = el.constructor === HTMLImageElement
-			? (el as HTMLImageElement).src
-			: el.dataset.src
-
+	private storeElement(el: HTMLElement): void {
+		const src = getElementSrc(el)
 		const group = el.dataset.group || LightboxGroup.DEFAULT_NAME
 		// const legend = el.dataset.legend || null
 
@@ -237,6 +310,11 @@ export default class Lightbox {
 
 		lightboxItem.addEvent((): void => {
 			this.setCurrent(lightboxItem)
+
+			const hideNav = this._groups.size(group) <= 1
+
+			this._nav_prev.classList.toggle('is-hidden', hideNav)
+			this._nav_next.classList.toggle('is-hidden', hideNav)
 
 			this.show(src)
 		})

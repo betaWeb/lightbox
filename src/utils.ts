@@ -82,3 +82,9 @@ export function aspectRatioFit(
         orientation
     }
 }
+
+export function getElementSrc(el): string {
+    return el.constructor === HTMLImageElement
+        ? (el as HTMLImageElement).src
+        : el.dataset.src
+}

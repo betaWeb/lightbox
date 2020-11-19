@@ -20,11 +20,15 @@ export default class LightboxList {
         return this.items[index] || null
     }
 
+    public findBy(src: string): LightboxItem|null {
+        return this.items.find(item => item.src === src) || null
+    }
+
     public remove(index: number): LightboxItem|null {
         const item = this.find(index)
 
         if (item !== null) {
-            delete this.items[index]
+            this.items.splice(index, 1)
         }
 
         return item

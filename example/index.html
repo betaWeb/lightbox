@@ -3,34 +3,145 @@
 <head>
 	<meta charset="UTF-8">
 	<title>Title</title>
+	<link rel="stylesheet" href="https://unpkg.com/spectre.css/dist/spectre.min.css">
+	<link rel="stylesheet" href="https://unpkg.com/spectre.css/dist/spectre-exp.min.css">
+	<link rel="stylesheet" href="https://unpkg.com/spectre.css/dist/spectre-icons.min.css">
 	<link rel="stylesheet" href="../src/style.css">
+	<style>
+		.container {
+			max-width: 900px;
+			padding: 2rem;
+		}
+		.group {
+            margin: 2rem 0;
+		}
+		.lightbox--link {
+            cursor: pointer;
+            margin: 4px;
+		}
+		.gallery {
+            position: relative;
+            display: flex;
+			flex-wrap: wrap;
+			justify-content: center;
+		}
+        .gallery.is-loading::before {
+            position: absolute;
+            content: '';
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background-color: rgba(255,255,255,.5);
+        }
+        .gallery.is-loading::after {
+            position: absolute;
+            content: '';
+            top: 50%;
+            left: 50%;
+			transform: translate(-50%, -50%) rotate(0);
+            width: 100px;
+            height: 100px;
+			border-top: 4px solid #5755d9;
+			border-radius: 50%;
+			animation: spin 1s linear infinite;
+        }
+		@keyframes spin {
+            from {
+                transform: translate(-50%, -50%) rotate(0);
+            }
+            to {
+                transform: translate(-50%, -50%) rotate(1turn);
+            }
+        }
+	</style>
 	<script src="../build/lightbox.js" defer></script>
 	<script defer>
-		document.addEventListener('DOMContentLoaded', () => {
-            new window.Lightbox('.lightbox--link')
+		document.addEventListener('DOMContentLoaded', function () {
+		    let imageId = 2
+            const lightbox = new window.Lightbox('.lightbox--link')
+            const appendBtn = document.getElementById('append-image')
+            const removeBtn = document.getElementById('remove-image')
+			const groupA = document.getElementById('group-A')
+			const groupB = document.getElementById('group-B')
+
+            appendBtn.addEventListener('click', function (e) {
+                e.preventDefault()
+
+                groupA.classList.add('is-loading')
+
+				const img = document.createElement('img')
+                img.setAttribute('height', '300')
+                img.dataset['group'] = 'A'
+                img.classList.add('lightbox--link', 'img-responsive')
+				img.src = `https://picsum.photos/id/${imageId}/200/300`
+				img.onload = function () {
+                    requestAnimationFrame(function () {
+                        groupA.classList.remove('is-loading')
+                    })
+				}
+
+                groupA.appendChild(img.cloneNode())
+
+                console.log(lightbox.refresh())
+
+                imageId += 1
+			})
+
+			removeBtn.addEventListener('click', function (e) {
+			    e.preventDefault()
+
+				const last = groupB.children[groupB.children.length - 1]
+
+                console.log(lightbox.remove(last))
+
+				last.remove()
+
+                if (groupB.children.length === 0) {
+                    groupB.parentElement.classList.add('d-none')
+                }
+			})
 		})
 	</script>
 </head>
 <body>
+<header class="navbar px-2">
+	<section class="navbar-section">
+		<a href="#" class="navbar-brand mr-2">Lightbox</a>
+	</section>
+	<section class="navbar-section">
+		<a href="#" class="btn btn-link">GitHub</a>
+	</section>
+</header>
+<div class="container">
+	<div class="columns">
+		<div class="column col-12 group">
+			<h2>Gallery A <button class="btn pull-right" id="append-image">Append image</button></h2>
+			<div class="gallery" id="group-A">
+				<img src="https://picsum.photos/id/1/200/300" height="300" class="lightbox--link img-responsive" data-group="A">
+			</div>
+		</div>
 
-<p>
-	<h2>Group "nature"</h2>
-	<img src="https://www.leplombetlaplume.fr/app/uploads/2020/03/3765-800x561.jpg" height="300" class="lightbox--link" data-group="nature">
-	<img src="https://www.leplombetlaplume.fr/app/uploads/2020/03/2674573-768x512.jpg" height="300" class="lightbox--link" data-group="nature">
-</p>
+		<div class="column col-12 group">
+			<div class="divider"></div>
+			<h2>Gallery B <button class="btn pull-right" id="remove-image">Remove last image</button></h2>
+			<div class="gallery" id="group-B">
+				<img src="https://picsum.photos/id/100/200/300" height="300" class="lightbox--link img-responsive" data-group="B">
+				<img src="https://picsum.photos/id/101/200/300" height="300" class="lightbox--link img-responsive" data-group="B">
+				<img src="https://picsum.photos/id/102/200/300" height="300" class="lightbox--link img-responsive" data-group="B">
+				<img src="https://picsum.photos/id/103/200/300" height="300" class="lightbox--link img-responsive" data-group="B">
+			</div>
+		</div>
 
-<p>
-	<h2>Group "travel"</h2>
-	<img src="https://www.leplombetlaplume.fr/app/uploads/2020/02/DSC_0046-576x1024.jpg" height="300" class="lightbox--link" data-group="travel">
-	<img src="https://www.leplombetlaplume.fr/app/uploads/2020/02/DSC_0110-800x1422.jpg" height="300" class="lightbox--link" data-group="travel">
-	<img src="https://www.leplombetlaplume.fr/app/uploads/2020/02/IMG_20190831_175458-1152x1536.jpg" height="300" class="lightbox--link" data-group="travel">
-	<img src="https://www.leplombetlaplume.fr/app/uploads/2020/02/IMG_20190901_133126-1152x1536.jpg" height="300" class="lightbox--link" data-group="travel">
-</p>
-
-<p>
-	<h2>Button event</h2>
-	<button class="lightbox--link" data-src="https://wallpaperaccess.com/full/82311.jpg" data-legend="Inspiration #1">Show big image</button>
-</p>
+		<div class="column col-12 text-center">
+			<div class="divider"></div>
+			<h2>Button event</h2>
+			<button class="btn btn-primary lightbox--link" data-src="https://picsum.photos/id/50/1920/1080" data-legend="Inspiration #1">
+				<i class="icon icon-photo"></i> Show big image
+			</button>
+		</div>
+	</div>
+</div>
 
 </body>
 </html>

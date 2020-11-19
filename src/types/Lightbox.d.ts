@@ -16,16 +16,20 @@ declare class Lightbox {
 	constructor(options: Options)
 
 	public show(src: string): void
-	public show(): Lightbox
+	public hide(): Lightbox
+	public add(el: HTMLElement|HTMLImageElement): Lightbox
+	public remove(el: HTMLElement|HTMLImageElement): LightboxItem|null
+	public refresh(groupName: string): object
 	public prev(): Lightbox
 	public next(): Lightbox
 	public destroy(): void
 
 	private nav(direction: number): Lightbox
+	private refreshGroup(groupName: string): object
 	private createLightBox(): void
 	private attachEvents(): void
 	private createLegend(legend: string): void
-	private storeElement(el: HTMLElement): Promise<void>
+	private storeElement(el: HTMLElement): void
 	private onEscape(e: KeyboardEvent): void
 	private onResize(): Promise<void>
 	private setInnerBoundings(): Promise<void>
@@ -45,7 +49,8 @@ declare class LightboxGroup {
 	public get(name: string): LightboxList
 	public create(name: string): void
 	public addTo(name: string, item: ILightboxItemObject|LightboxItem): LightboxItem
-	public retrieve(name: string, index: number): LightboxItem|null
+	public retrieve(name: string, needle: string|number): LightboxItem|null
+	public remove(name: string): void
 	public size(name: string): number
 
 }
@@ -56,6 +61,7 @@ declare class LightboxList {
 
 	public add(item: ILightboxItemObject|LightboxItem): LightboxItem
 	public find(index: number): LightboxItem|null
+	public findBy(src: string): LightboxItem|null
 	public remove(index: number): LightboxItem|null
 
 }

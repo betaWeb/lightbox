@@ -244,7 +244,7 @@ parcelRequire = function (modules, cache, entry, globalName) {
     Object.defineProperty(exports, "__esModule", {
       value: true
     });
-    exports.aspectRatioFit = exports.getImageBoundings = exports.debounce = void 0;
+    exports.getElementSrc = exports.aspectRatioFit = exports.getImageBoundings = exports.debounce = void 0;
 
     function debounce(callback, delay) {
       var timer;
@@ -332,6 +332,12 @@ parcelRequire = function (modules, cache, entry, globalName) {
     }
 
     exports.aspectRatioFit = aspectRatioFit;
+
+    function getElementSrc(el) {
+      return el.constructor === HTMLImageElement ? el.src : el.dataset.src;
+    }
+
+    exports.getElementSrc = getElementSrc;
   }, {}],
   "LightboxItem.ts": [function (require, module, exports) {
     "use strict";
@@ -447,11 +453,17 @@ parcelRequire = function (modules, cache, entry, globalName) {
         return this.items[index] || null;
       };
 
+      LightboxList.prototype.findBy = function (src) {
+        return this.items.find(function (item) {
+          return item.src === src;
+        }) || null;
+      };
+
       LightboxList.prototype.remove = function (index) {
         var item = this.find(index);
 
         if (item !== null) {
-          delete this.items[index];
+          this.items.splice(index, 1);
         }
 
         return item;
@@ -508,8 +520,16 @@ parcelRequire = function (modules, cache, entry, globalName) {
         return item;
       };
 
-      LightboxGroup.prototype.retrieve = function (name, index) {
-        return this.get(name).find(index);
+      LightboxGroup.prototype.retrieve = function (name, needle) {
+        if (typeof needle === 'string') {
+          return this.get(name).findBy(needle);
+        }
+
+        return this.get(name).find(needle);
+      };
+
+      LightboxGroup.prototype.remove = function (name) {
+        delete this.groups[name];
       };
 
       LightboxGroup.prototype.size = function (name) {
@@ -816,6 +836,51 @@ parcelRequire = function (modules, cache, entry, globalName) {
         return this.nav(1);
       };
 
+      Lightbox.prototype.add = function (el) {
+        this.storeElement(el);
+        return this;
+      };
+
+      Lightbox.prototype.remove = function (el) {
+        var group = el.dataset.group || LightboxGroup_1.default.DEFAULT_NAME;
+
+        var item = this._groups.retrieve(group, utils_1.getElementSrc(el));
+
+        if (item !== null) {
+          this._groups.get(group).remove(item.index);
+
+          if (this._groups.size(group) === 0) {
+            this._groups.remove(group);
+          }
+
+          return item;
+        }
+
+        return null;
+      };
+
+      Lightbox.prototype.refresh = function (groupName) {
+        if (groupName === void 0) {
+          groupName = null;
+        }
+
+        var altered = {};
+
+        if (groupName === null) {
+          var groups = this._groups.all();
+
+          for (var name in groups) {
+            if (groups.hasOwnProperty(name)) {
+              altered = __assign(__assign({}, altered), this.refreshGroup(name));
+            }
+          }
+        } else {
+          altered = __assign(__assign({}, altered), this.refreshGroup(groupName));
+        }
+
+        return altered;
+      };
+
       Lightbox.prototype.destroy = function () {
         for (var group in this._groups.all()) {
           if (this._groups.hasOwnProperty(group)) {
@@ -873,6 +938,46 @@ parcelRequire = function (modules, cache, entry, globalName) {
         }
 
         return this;
+      };
+
+      Lightbox.prototype.refreshGroup = function (groupName) {
+        var _a;
+
+        var _this = this;
+
+        var elements = Array.from(document.querySelectorAll(this.options.selector + "[data-group=\"" + groupName + "\"]"));
+
+        var group = this._groups.get(groupName);
+
+        var items = group.items;
+        var added = [];
+        var removed = [];
+
+        if (elements.length !== items.length) {
+          added = elements.filter(function (el) {
+            return !items.map(function (i) {
+              return i.src;
+            }).includes(utils_1.getElementSrc(el));
+          });
+          removed = items.filter(function (item) {
+            return !elements.map(utils_1.getElementSrc).includes(item.src);
+          });
+          removed.forEach(function (_a) {
+            var index = _a.index;
+            return group.remove(index);
+          });
+          added.forEach(function (el) {
+            return _this.storeElement(el);
+          });
+          items.forEach(function (item, index) {
+            return item.index = index;
+          });
+        }
+
+        return _a = {}, _a[groupName] = {
+          added: added,
+          removed: removed
+        }, _a;
       };
 
       Lightbox.prototype.createLightBox = function () {
@@ -944,31 +1049,29 @@ parcelRequire = function (modules, cache, entry, globalName) {
       };
 
       Lightbox.prototype.storeElement = function (el) {
-        return __awaiter(this, void 0, Promise, function () {
-          var src, group, lightboxItem;
+        var _this = this;
 
-          var _this = this;
+        var src = utils_1.getElementSrc(el);
+        var group = el.dataset.group || LightboxGroup_1.default.DEFAULT_NAME;
 
-          return __generator(this, function (_a) {
-            src = el.constructor === HTMLImageElement ? el.src : el.dataset.src;
-            group = el.dataset.group || LightboxGroup_1.default.DEFAULT_NAME;
+        this._groups.create(group);
 
-            this._groups.create(group);
+        var lightboxItem = new LightboxItem_1.default(el, src);
+        lightboxItem.group = group;
+        lightboxItem.index = this._groups.size(group);
+        lightboxItem.addEvent(function () {
+          _this.setCurrent(lightboxItem);
 
-            lightboxItem = new LightboxItem_1.default(el, src);
-            lightboxItem.group = group;
-            lightboxItem.index = this._groups.size(group);
-            lightboxItem.addEvent(function () {
-              _this.setCurrent(lightboxItem);
+          var hideNav = _this._groups.size(group) <= 1;
 
-              _this.show(src);
-            });
+          _this._nav_prev.classList.toggle('is-hidden', hideNav);
 
-            this._groups.addTo(group, lightboxItem);
+          _this._nav_next.classList.toggle('is-hidden', hideNav);
 
-            return [2];
-          });
+          _this.show(src);
         });
+
+        this._groups.addTo(group, lightboxItem);
       };
 
       Lightbox.prototype.onEscape = function (e) {
@@ -1055,7 +1158,7 @@ parcelRequire = function (modules, cache, entry, globalName) {
     if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
       var hostname = "" || location.hostname;
       var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-      var ws = new WebSocket(protocol + '://' + hostname + ':' + "40891" + '/');
+      var ws = new WebSocket(protocol + '://' + hostname + ':' + "43875" + '/');
 
       ws.onmessage = function (event) {
         checkedAssets = {};
@@ -1261,7 +1364,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "37339" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "41803" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
