@@ -8,14 +8,17 @@ export default class LightboxItem {
 
     public handler: EventListener = null
 
+    public legend: string = null
+
     private _group: string = null
 
     private _index: number = null
 
-    constructor(el: HTMLElement, src: string, handler: EventListener = null) {
+    constructor({el, src, handler, legend}: ILightboxItemObject) {
         this.el = el
         this.src = src
-        this.handler = handler
+        this.handler = handler || null
+        this.legend = legend || null
     }
 
     public get group(): string {
@@ -34,8 +37,8 @@ export default class LightboxItem {
         this._index = index
     }
 
-    public addEvent(handler: EventListener|null = null): this {
-        if (handler !== null) {
+    public addEvent(handler?: EventListener): this {
+        if (handler) {
             this.handler = handler
         }
 

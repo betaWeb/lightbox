@@ -1,6 +1,6 @@
 {
 	"name": "@betaweb/lightbox",
-	"version": "1.0.6",
+	"version": "1.0.7",
 	"description": "A simple JavaScript class to generate images Lightbox",
 	"main": "index.js",
 	"scripts": {

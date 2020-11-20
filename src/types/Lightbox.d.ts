@@ -6,16 +6,18 @@ declare class Lightbox {
 	private _groups: LightboxGroup
 	private _lightbox: HTMLDivElement
 	private _lightbox_inner: HTMLDivElement
+	private _lightbox_legend?: HTMLDivElement
 	private _image: HTMLImageElement
-	private _nav_prev: HTMLDivElement
-	private _nav_next: HTMLDivElement
+	private _nav_prev?: HTMLDivElement
+	private _nav_next?: HTMLDivElement
+	private _nav_dots?: HTMLDivElement
 	private _current: LightboxItem
 
 	public static get default_options(): Options
 
 	constructor(options: Options)
 
-	public show(src: string): void
+	public show(item: LightboxItem): void
 	public hide(): Lightbox
 	public add(el: HTMLElement|HTMLImageElement): Lightbox
 	public remove(el: HTMLElement|HTMLImageElement): LightboxItem|null
@@ -26,13 +28,16 @@ declare class Lightbox {
 
 	private nav(direction: number): Lightbox
 	private refreshGroup(groupName: string): object
+	private goTo(item: LightboxItem): void
 	private createLightBox(): void
 	private attachEvents(): void
 	private createLegend(legend: string): void
 	private storeElement(el: HTMLElement): void
-	private onEscape(e: KeyboardEvent): void
-	private onResize(): Promise<void>
-	private setInnerBoundings(): Promise<void>
+	private displayLegend(legend?: string): void
+	private createNavDots(activeItem: LightboxItem): void
+	private onKeyup(e: KeyboardEvent): void
+	private onResize(): void
+	private setInnerBoundings(): void
 	private aspectRatioFit(srcWidth: number, srcHeight: number, maxWidth: number, maxHeight: number): AspectRatio
 	private setCurrent(group: string, index: number): void
 
@@ -62,6 +67,7 @@ declare class LightboxList {
 	public add(item: ILightboxItemObject|LightboxItem): LightboxItem
 	public find(index: number): LightboxItem|null
 	public findBy(src: string): LightboxItem|null
+	public refresh(): void
 	public remove(index: number): LightboxItem|null
 
 }
@@ -70,11 +76,12 @@ declare class LightboxItem {
 
 	public el: HTMLElement
 	public src: string
-	public handler: Function
+	public handler: EventListener
+	public legend: string
 	private _group: string
 	private _index: number
 
-	constructor(el: HTMLElement, src: string, handler: EventListener)
+	constructor(params: ILightboxItemObject)
 
 	public get group(): string
 	public get index(): number
@@ -82,7 +89,7 @@ declare class LightboxItem {
 	public set group(group: string)
 	public set index(index: number)
 
-	public addEvent(handler: EventListener|null): this
+	public addEvent(handler?: EventListener): this
 	public removeEvent(): this
 }
 
@@ -94,22 +101,25 @@ declare interface ILightboxItemObject {
 	el: HTMLElement
 	src: string
 	handler?: EventListener
+	legend?: string
 }
 
 declare type Options = {
 	selector: string
-	lightbox_class: string
-	lightbox_inner_class: string
-	lightbox_legend_class: string
-	lightbox_visible_class: string
-	image_loading_class: string
-	prevent_scroll: boolean
-	prevent_scroll_class: string
-	prevent_scroll_element: HTMLElement
-	inner_offset: number
-	nav: boolean
-	nav_prev_class: string
-	nav_next_class: string
+	lightbox_class?: string
+	lightbox_inner_class?: string
+	lightbox_legend_class?: string
+	lightbox_visible_class?: string
+	image_loading_class?: string
+	prevent_scroll?: boolean
+	prevent_scroll_class?: string
+	prevent_scroll_element?: HTMLElement
+	inner_offset?: number
+	nav?: boolean
+	dots?: boolean
+	nav_prev_class?: string
+	nav_next_class?: string
+	nav_dots_class?: string
 }
 
 declare type AspectRatio = {

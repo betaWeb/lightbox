@@ -355,19 +355,21 @@ parcelRequire = function (modules, cache, entry, globalName) {
     var LightboxGroup_1 = __importDefault(require("./LightboxGroup"));
 
     var LightboxItem = function () {
-      function LightboxItem(el, src, handler) {
-        if (handler === void 0) {
-          handler = null;
-        }
-
+      function LightboxItem(_a) {
+        var el = _a.el,
+            src = _a.src,
+            handler = _a.handler,
+            legend = _a.legend;
         this.el = null;
         this.src = null;
         this.handler = null;
+        this.legend = null;
         this._group = null;
         this._index = null;
         this.el = el;
         this.src = src;
-        this.handler = handler;
+        this.handler = handler || null;
+        this.legend = legend || null;
       }
 
       Object.defineProperty(LightboxItem.prototype, "group", {
@@ -392,11 +394,7 @@ parcelRequire = function (modules, cache, entry, globalName) {
       });
 
       LightboxItem.prototype.addEvent = function (handler) {
-        if (handler === void 0) {
-          handler = null;
-        }
-
-        if (handler !== null) {
+        if (handler) {
           this.handler = handler;
         }
 
@@ -438,11 +436,7 @@ parcelRequire = function (modules, cache, entry, globalName) {
 
       LightboxList.prototype.add = function (item) {
         if (!(item instanceof LightboxItem_1.default)) {
-          var _a = item,
-              el = _a.el,
-              src = _a.src,
-              handler = _a.handler;
-          item = new LightboxItem_1.default(el, src, handler);
+          item = new LightboxItem_1.default(item);
         }
 
         this.items.push(item);
@@ -457,6 +451,12 @@ parcelRequire = function (modules, cache, entry, globalName) {
         return this.items.find(function (item) {
           return item.src === src;
         }) || null;
+      };
+
+      LightboxList.prototype.refresh = function () {
+        this.items.forEach(function (item, index) {
+          return item.index = index;
+        });
       };
 
       LightboxList.prototype.remove = function (index) {
@@ -735,9 +735,11 @@ parcelRequire = function (modules, cache, entry, globalName) {
         this._groups = null;
         this._lightbox = null;
         this._lightbox_inner = null;
+        this._lightbox_legend = null;
         this._image = null;
         this._nav_prev = null;
         this._nav_next = null;
+        this._nav_dots = null;
         this._current = null;
         this.options = __assign(__assign({}, Lightbox.default_options), options);
         this.elements = document.querySelectorAll(this.options.selector);
@@ -750,7 +752,7 @@ parcelRequire = function (modules, cache, entry, globalName) {
         this.hide = this.hide.bind(this);
         this.prev = this.prev.bind(this);
         this.next = this.next.bind(this);
-        this.onEscape = this.onEscape.bind(this);
+        this.onKeyup = this.onKeyup.bind(this);
         this.onResize = this.onResize.bind(this);
         this.attachEvents();
       }
@@ -769,50 +771,46 @@ parcelRequire = function (modules, cache, entry, globalName) {
             prevent_scroll_element: document.body,
             inner_offset: 30,
             nav: true,
-            nav_prev_class: 'lightbox--prev',
-            nav_next_class: 'lightbox--next'
+            dots: true,
+            nav_prev_class: 'lightbox--nav-prev',
+            nav_next_class: 'lightbox--nav-next',
+            nav_dots_class: 'lightbox--nav-dots'
           };
         },
         enumerable: false,
         configurable: true
       });
 
-      Lightbox.prototype.show = function (src) {
+      Lightbox.prototype.show = function (item) {
         var _this = this;
 
         this._lightbox.classList.add(this.options.image_loading_class);
 
         this._image = new Image();
+        this._image.src = item.src;
 
         this._image.onload = function () {
-          return __awaiter(_this, void 0, Promise, function () {
-            var _this = this;
+          _this.setInnerBoundings();
 
-            return __generator(this, function (_a) {
-              switch (_a.label) {
-                case 0:
-                  return [4, this.setInnerBoundings()];
-
-                case 1:
-                  _a.sent();
-
-                  this._lightbox_inner.style.backgroundImage = "url('" + this._image.src + "')";
-                  setTimeout(function () {
-                    _this._lightbox.classList.remove(_this.options.image_loading_class);
-                  }, 300);
-                  return [2];
-              }
-            });
-          });
+          _this._lightbox_inner.style.backgroundImage = "url('" + _this._image.src + "')";
+          setTimeout(function () {
+            _this._lightbox.classList.remove(_this.options.image_loading_class);
+          }, 300);
         };
-
-        this._image.src = src;
 
         if (this.options.prevent_scroll) {
           this.options.prevent_scroll_element.classList.add(this.options.prevent_scroll_class);
         }
 
         this._lightbox.classList.add(this.options.lightbox_visible_class);
+
+        this.displayLegend(item.legend);
+
+        if (this.options.dots === true) {
+          this._nav_dots.childNodes.forEach(function (dot) {
+            dot.classList.toggle('active', parseInt(dot.dataset.index, 10) === item.index);
+          });
+        }
       };
 
       Lightbox.prototype.hide = function () {
@@ -851,6 +849,8 @@ parcelRequire = function (modules, cache, entry, globalName) {
 
           if (this._groups.size(group) === 0) {
             this._groups.remove(group);
+          } else {
+            this._groups.get(group).refresh();
           }
 
           return item;
@@ -895,7 +895,7 @@ parcelRequire = function (modules, cache, entry, globalName) {
         }
 
         window.removeEventListener('resize', utils_1.debounce(this.onResize, 300));
-        window.removeEventListener('keyup', this.onEscape);
+        window.removeEventListener('keyup', this.onKeyup);
 
         this._nav_prev.removeEventListener('click', this.prev);
 
@@ -932,12 +932,16 @@ parcelRequire = function (modules, cache, entry, globalName) {
         var item = this._groups.retrieve(group, newIndex + direction);
 
         if (item !== null) {
-          this.hide();
-          this.setCurrent(item);
-          this.show(item.src);
+          this.goTo(item);
         }
 
         return this;
+      };
+
+      Lightbox.prototype.goTo = function (item) {
+        this.hide();
+        this.setCurrent(item);
+        this.show(item);
       };
 
       Lightbox.prototype.refreshGroup = function (groupName) {
@@ -969,9 +973,7 @@ parcelRequire = function (modules, cache, entry, globalName) {
           added.forEach(function (el) {
             return _this.storeElement(el);
           });
-          items.forEach(function (item, index) {
-            return item.index = index;
-          });
+          group.refresh();
         }
 
         return _a = {}, _a[groupName] = {
@@ -981,9 +983,15 @@ parcelRequire = function (modules, cache, entry, globalName) {
       };
 
       Lightbox.prototype.createLightBox = function () {
+        this._lightbox_legend = document.createElement('div');
+
+        this._lightbox_legend.classList.add(this.options.lightbox_legend_class);
+
         this._lightbox_inner = document.createElement('div');
 
         this._lightbox_inner.classList.add(this.options.lightbox_inner_class);
+
+        this._lightbox_inner.appendChild(this._lightbox_legend);
 
         this._lightbox = document.createElement('div');
 
@@ -992,19 +1000,28 @@ parcelRequire = function (modules, cache, entry, globalName) {
         this._lightbox.appendChild(this._lightbox_inner);
 
         if (this.options.nav === true) {
-          var nav_prev = document.createElement('div');
-          var nav_next = document.createElement('div');
-          nav_prev.classList.add(this.options.nav_prev_class);
-          nav_next.classList.add(this.options.nav_next_class);
-          nav_prev.addEventListener('click', this.prev);
-          nav_next.addEventListener('click', this.next);
+          this._nav_prev = document.createElement('div');
+          this._nav_next = document.createElement('div');
 
-          this._lightbox_inner.appendChild(nav_prev);
+          this._nav_prev.classList.add(this.options.nav_prev_class);
 
-          this._lightbox_inner.appendChild(nav_next);
+          this._nav_next.classList.add(this.options.nav_next_class);
 
-          this._nav_prev = nav_prev;
-          this._nav_next = nav_next;
+          this._nav_prev.addEventListener('click', this.prev);
+
+          this._nav_next.addEventListener('click', this.next);
+
+          this._lightbox_inner.appendChild(this._nav_prev);
+
+          this._lightbox_inner.appendChild(this._nav_next);
+        }
+
+        if (this.options.dots === true) {
+          this._nav_dots = document.createElement('ul');
+
+          this._nav_dots.classList.add(this.options.nav_dots_class);
+
+          this._lightbox.appendChild(this._nav_dots);
         }
 
         document.body.appendChild(this._lightbox);
@@ -1014,7 +1031,7 @@ parcelRequire = function (modules, cache, entry, globalName) {
         var _this = this;
 
         window.addEventListener('resize', utils_1.debounce(this.onResize, 300));
-        window.addEventListener('keyup', this.onEscape);
+        window.addEventListener('keyup', this.onKeyup);
         this.createLightBox();
 
         this._lightbox.addEventListener('click', this.hide);
@@ -1040,23 +1057,20 @@ parcelRequire = function (modules, cache, entry, globalName) {
         });
       };
 
-      Lightbox.prototype.createLegend = function (legend) {
-        var div = document.createElement('div');
-        div.classList.add(this.options.lightbox_legend_class);
-        div.innerHTML = legend;
-
-        this._lightbox_inner.appendChild(div);
-      };
-
       Lightbox.prototype.storeElement = function (el) {
         var _this = this;
 
         var src = utils_1.getElementSrc(el);
         var group = el.dataset.group || LightboxGroup_1.default.DEFAULT_NAME;
+        var legend = el.dataset.legend || null;
 
         this._groups.create(group);
 
-        var lightboxItem = new LightboxItem_1.default(el, src);
+        var lightboxItem = new LightboxItem_1.default({
+          el: el,
+          src: src,
+          legend: legend
+        });
         lightboxItem.group = group;
         lightboxItem.index = this._groups.size(group);
         lightboxItem.addEvent(function () {
@@ -1068,49 +1082,89 @@ parcelRequire = function (modules, cache, entry, globalName) {
 
           _this._nav_next.classList.toggle('is-hidden', hideNav);
 
-          _this.show(src);
+          if (!hideNav) {
+            _this.createNavDots(lightboxItem);
+          }
+
+          _this.show(lightboxItem);
         });
 
         this._groups.addTo(group, lightboxItem);
       };
 
-      Lightbox.prototype.onEscape = function (e) {
-        if (e.key === 'Escape') {
-          this.hide();
-        }
+      Lightbox.prototype.displayLegend = function (legend) {
+        this._lightbox_legend.style.display = legend ? '' : 'none';
+        this._lightbox_legend.innerHTML = legend || '';
+      };
+
+      Lightbox.prototype.createNavDots = function (activeItem) {
+        var _this = this;
+
+        this._nav_dots.innerHTML = '';
+        var group = this._current.group;
+
+        this._groups.get(group).items.forEach(function (item) {
+          var dot = document.createElement('li');
+          dot.dataset['index'] = item.index.toString();
+
+          if (item === activeItem) {
+            dot.classList.add('active');
+          }
+
+          dot.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            _this.goTo(item);
+          });
+
+          _this._nav_dots.appendChild(dot);
+        });
       };
 
       Lightbox.prototype.onResize = function () {
-        return __awaiter(this, void 0, Promise, function () {
-          return __generator(this, function (_a) {
-            switch (_a.label) {
-              case 0:
-                if (!(this._image !== null)) return [3, 2];
-                return [4, this.setInnerBoundings()];
+        if (this._image !== null) {
+          this.setInnerBoundings();
+        }
+      };
 
-              case 1:
-                _a.sent();
+      Lightbox.prototype.onKeyup = function (e) {
+        e.preventDefault();
 
-                _a.label = 2;
+        if (this._current === null) {
+          return;
+        }
 
-              case 2:
-                return [2];
+        var hasSiblings = this._groups.size(this._current.group) > 1;
+
+        switch (e.key) {
+          case 'ArrowLeft':
+            if (hasSiblings) {
+              this.prev();
             }
-          });
-        });
+
+            break;
+
+          case 'ArrowRight':
+            if (hasSiblings) {
+              this.next();
+            }
+
+            break;
+
+          case 'Escape':
+            this.hide();
+            break;
+        }
       };
 
       Lightbox.prototype.setInnerBoundings = function () {
-        return __awaiter(this, void 0, Promise, function () {
-          var _a, width, height;
+        var _a = utils_1.getImageBoundings(this._image, this.options.inner_offset),
+            width = _a.width,
+            height = _a.height;
 
-          return __generator(this, function (_b) {
-            _a = utils_1.getImageBoundings(this._image, this.options.inner_offset), width = _a.width, height = _a.height;
-            this._lightbox_inner.style.width = width + 'px';
-            this._lightbox_inner.style.height = height + 'px';
-            return [2];
-          });
-        });
+        this._lightbox_inner.style.width = width + 'px';
+        this._lightbox_inner.style.height = height + 'px';
       };
 
       Lightbox.prototype.setCurrent = function (item) {
@@ -1158,7 +1212,7 @@ parcelRequire = function (modules, cache, entry, globalName) {
     if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
       var hostname = "" || location.hostname;
       var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-      var ws = new WebSocket(protocol + '://' + hostname + ':' + "43875" + '/');
+      var ws = new WebSocket(protocol + '://' + hostname + ':' + "43035" + '/');
 
       ws.onmessage = function (event) {
         checkedAssets = {};
@@ -1364,7 +1418,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "41803" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "43387" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

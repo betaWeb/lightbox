@@ -14,11 +14,15 @@ export default class Lightbox {
 
 	private _lightbox_inner: HTMLDivElement = null
 
+	private _lightbox_legend?: HTMLDivElement = null
+
 	private _image: HTMLImageElement = null
 
-	private _nav_prev: HTMLDivElement = null
+	private _nav_prev?: HTMLDivElement = null
 
-	private _nav_next: HTMLDivElement = null
+	private _nav_next?: HTMLDivElement = null
+
+	private _nav_dots?: HTMLUListElement = null;
 
 	private _current: LightboxItem = null
 
@@ -35,8 +39,10 @@ export default class Lightbox {
 			prevent_scroll_element: document.body,
 			inner_offset: 30,
 			nav: true,
-			nav_prev_class: 'lightbox--prev',
-			nav_next_class: 'lightbox--next'
+			dots: true,
+			nav_prev_class: 'lightbox--nav-prev',
+			nav_next_class: 'lightbox--nav-next',
+			nav_dots_class: 'lightbox--nav-dots'
 		}
 	}
 
@@ -57,19 +63,20 @@ export default class Lightbox {
 		this.hide = this.hide.bind(this)
 		this.prev = this.prev.bind(this)
 		this.next = this.next.bind(this)
-		this.onEscape = this.onEscape.bind(this)
+		this.onKeyup = this.onKeyup.bind(this)
 		this.onResize = this.onResize.bind(this)
 
 		this.attachEvents()
 	}
 
-	public show(src: string): void {
+	public show(item: LightboxItem): void {
 		this._lightbox.classList.add(this.options.image_loading_class)
 
 		this._image = new Image()
+		this._image.src = item.src
 
-		this._image.onload = async (): Promise<void> => {
-			await this.setInnerBoundings()
+		this._image.onload = (): void => {
+			this.setInnerBoundings()
 
 			this._lightbox_inner.style.backgroundImage = `url('${this._image.src}')`
 
@@ -78,13 +85,19 @@ export default class Lightbox {
 			}, 300)
 		}
 
-		this._image.src = src
-
 		if (this.options.prevent_scroll) {
 			this.options.prevent_scroll_element.classList.add(this.options.prevent_scroll_class)
 		}
 
 		this._lightbox.classList.add(this.options.lightbox_visible_class)
+
+		this.displayLegend(item.legend);
+
+		if (this.options.dots === true) {
+			this._nav_dots.childNodes.forEach((dot: HTMLElement) => {
+				dot.classList.toggle('active', parseInt(dot.dataset.index, 10) === item.index)
+			})
+		}
 	}
 
 	public hide(): this {
@@ -125,6 +138,8 @@ export default class Lightbox {
 
 			if (this._groups.size(group) === 0) {
 				this._groups.remove(group)
+			} else {
+				this._groups.get(group).refresh()
 			}
 
 			return item
@@ -171,7 +186,7 @@ export default class Lightbox {
 		}
 
 		window.removeEventListener('resize', debounce(this.onResize, 300) as EventListener)
-		window.removeEventListener('keyup', this.onEscape)
+		window.removeEventListener('keyup', this.onKeyup as EventListener)
 
 		this._nav_prev.removeEventListener('click', this.prev)
 		this._nav_next.removeEventListener('click', this.next)
@@ -202,14 +217,18 @@ export default class Lightbox {
 		let item: LightboxItem = this._groups.retrieve(group, newIndex + direction)
 
 		if (item !== null) {
-			this.hide()
-
-			this.setCurrent(item)
-
-			this.show(item.src)
+			this.goTo(item)
 		}
 
 		return this
+	}
+
+	private goTo(item: LightboxItem): void {
+		this.hide()
+
+		this.setCurrent(item)
+
+		this.show(item)
 	}
 
 	private refreshGroup(groupName: string): object {
@@ -235,35 +254,44 @@ export default class Lightbox {
 			removed.forEach(({index}: LightboxItem) => group.remove(index))
 			added.forEach((el: HTMLElement) => this.storeElement(el))
 
-			items.forEach((item: LightboxItem, index: number) => item.index = index)
+			group.refresh()
 		}
 
 		return {[groupName]: {added, removed}}
 	}
 
 	private createLightBox(): void {
+		this._lightbox_legend = document.createElement('div')
+		this._lightbox_legend.classList.add(this.options.lightbox_legend_class)
+
 		this._lightbox_inner = document.createElement('div')
 		this._lightbox_inner.classList.add(this.options.lightbox_inner_class)
+		this._lightbox_inner.appendChild(this._lightbox_legend)
 
 		this._lightbox = document.createElement('div')
 		this._lightbox.classList.add(this.options.lightbox_class)
 		this._lightbox.appendChild(this._lightbox_inner)
 
 		if (this.options.nav === true) {
-			const nav_prev = document.createElement('div')
-			const nav_next = document.createElement('div')
+			this._nav_prev = document.createElement('div')
+			this._nav_next = document.createElement('div')
 
-			nav_prev.classList.add(this.options.nav_prev_class)
-			nav_next.classList.add(this.options.nav_next_class)
+			this._nav_prev.classList.add(this.options.nav_prev_class)
+			this._nav_next.classList.add(this.options.nav_next_class)
 
-			nav_prev.addEventListener('click', this.prev)
-			nav_next.addEventListener('click', this.next)
+			this._nav_prev.addEventListener('click', this.prev as EventListener)
+			this._nav_next.addEventListener('click', this.next as EventListener)
 
-			this._lightbox_inner.appendChild(nav_prev)
-			this._lightbox_inner.appendChild(nav_next)
+			this._lightbox_inner.appendChild(this._nav_prev)
+			this._lightbox_inner.appendChild(this._nav_next)
+		}
 
-			this._nav_prev = nav_prev
-			this._nav_next = nav_next
+		if (this.options.dots === true) {
+			this._nav_dots = document.createElement('ul')
+
+			this._nav_dots.classList.add(this.options.nav_dots_class)
+
+			this._lightbox.appendChild(this._nav_dots)
 		}
 
 		document.body.appendChild(this._lightbox)
@@ -271,7 +299,7 @@ export default class Lightbox {
 
 	private attachEvents(): void {
 		window.addEventListener('resize', debounce(this.onResize, 300) as EventListener)
-		window.addEventListener('keyup', this.onEscape)
+		window.addEventListener('keyup', this.onKeyup)
 
 		this.createLightBox()
 
@@ -283,27 +311,14 @@ export default class Lightbox {
 		})
 	}
 
-	private createLegend(legend: string): void {
-		const div = document.createElement('div')
-
-		div.classList.add(this.options.lightbox_legend_class)
-		div.innerHTML = legend
-
-		this._lightbox_inner.appendChild(div)
-	}
-
 	private storeElement(el: HTMLElement): void {
 		const src = getElementSrc(el)
 		const group = el.dataset.group || LightboxGroup.DEFAULT_NAME
-		// const legend = el.dataset.legend || null
+		const legend = el.dataset.legend || null
 
 		this._groups.create(group)
 
-		/*if (legend !== null) {
-				this.createLegend(legend)
-		}*/
-
-		const lightboxItem = new LightboxItem(el, src)
+		const lightboxItem = new LightboxItem({el, src, legend})
 
 		lightboxItem.group = group
 		lightboxItem.index = this._groups.size(group)
@@ -316,25 +331,79 @@ export default class Lightbox {
 			this._nav_prev.classList.toggle('is-hidden', hideNav)
 			this._nav_next.classList.toggle('is-hidden', hideNav)
 
-			this.show(src)
+			if (!hideNav) {
+				this.createNavDots(lightboxItem)
+			}
+
+			this.show(lightboxItem)
 		})
 
 		this._groups.addTo(group, lightboxItem)
 	}
 
-	private onEscape(e: KeyboardEvent): void {
-		if (e.key === 'Escape') {
-			this.hide()
-		}
+	private displayLegend(legend?: string): void {
+		this._lightbox_legend.style.display = legend ? '' : 'none'
+		this._lightbox_legend.innerHTML = legend || ''
 	}
 
-	private async onResize(): Promise<void> {
+	private createNavDots(activeItem: LightboxItem): void {
+		this._nav_dots.innerHTML = ''
+
+		const group = this._current.group
+
+		this._groups.get(group).items.forEach((item: LightboxItem): void => {
+			const dot = document.createElement('li')
+
+			dot.dataset['index'] = item.index.toString()
+
+			if (item === activeItem) {
+				dot.classList.add('active')
+			}
+
+			dot.addEventListener('click', e => {
+				e.preventDefault()
+				e.stopPropagation()
+
+				this.goTo(item)
+			})
+
+			this._nav_dots.appendChild(dot)
+		})
+	}
+
+	private onResize(): void {
 		if (this._image !== null) {
-			await this.setInnerBoundings()
+			this.setInnerBoundings()
 		}
 	}
 
-	private async setInnerBoundings(): Promise<void> {
+	private onKeyup(e): void {
+		e.preventDefault()
+
+		if (this._current === null) {
+			return;
+		}
+
+		const hasSiblings = this._groups.size(this._current.group) > 1
+
+		switch (e.key) {
+			case 'ArrowLeft':
+				if (hasSiblings) {
+					this.prev()
+				}
+				break;
+			case 'ArrowRight':
+				if (hasSiblings) {
+					this.next()
+				}
+				break;
+			case 'Escape':
+				this.hide()
+				break;
+		}
+	}
+
+	private setInnerBoundings(): void {
 		const {width, height}: ImageBoundings = getImageBoundings(
 			this._image,
 			this.options.inner_offset

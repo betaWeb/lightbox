@@ -6,9 +6,7 @@ export default class LightboxList {
 
     public add(item: ILightboxItemObject|LightboxItem): LightboxItem {
         if (!(item instanceof LightboxItem)) {
-            const {el, src, handler} = item as ILightboxItemObject
-
-            item = new LightboxItem(el, src, handler)
+            item = new LightboxItem(item)
         }
 
         this.items.push(item as LightboxItem)
@@ -22,6 +20,10 @@ export default class LightboxList {
 
     public findBy(src: string): LightboxItem|null {
         return this.items.find(item => item.src === src) || null
+    }
+
+    public refresh(): void {
+        this.items.forEach((item: LightboxItem, index: number) => item.index = index)
     }
 
     public remove(index: number): LightboxItem|null {
