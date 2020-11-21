@@ -1,6 +1,6 @@
-import {debounce, getElementSrc, getImageBoundings} from "./utils";
-import LightboxGroup from "./LightboxGroup";
-import LightboxItem from "./LightboxItem";
+import {debounce, getElementSrc, getImageBoundings} from "./utils"
+import LightboxGroup from "./LightboxGroup"
+import LightboxItem from "./LightboxItem"
 
 export default class Lightbox {
 
@@ -22,7 +22,7 @@ export default class Lightbox {
 
 	private _nav_next?: HTMLDivElement = null
 
-	private _nav_dots?: HTMLUListElement = null;
+	private _nav_dots?: HTMLUListElement = null
 
 	private _current: LightboxItem = null
 
@@ -39,9 +39,9 @@ export default class Lightbox {
 			prevent_scroll_element: document.body,
 			inner_offset: 30,
 			nav: true,
-			dots: true,
 			nav_prev_class: 'lightbox--nav-prev',
 			nav_next_class: 'lightbox--nav-next',
+			dots: true,
 			nav_dots_class: 'lightbox--nav-dots'
 		}
 	}
@@ -69,35 +69,14 @@ export default class Lightbox {
 		this.attachEvents()
 	}
 
-	public show(item: LightboxItem): void {
-		this._lightbox.classList.add(this.options.image_loading_class)
+	public show(src: string, group?: string): LightboxItem|null {
+		const item = this.find(src, group)
 
-		this._image = new Image()
-		this._image.src = item.src
-
-		this._image.onload = (): void => {
-			this.setInnerBoundings()
-
-			this._lightbox_inner.style.backgroundImage = `url('${this._image.src}')`
-
-			setTimeout(() => {
-				this._lightbox.classList.remove(this.options.image_loading_class)
-			}, 300)
+		if (item !== null) {
+			this.revealImage(item)
 		}
 
-		if (this.options.prevent_scroll) {
-			this.options.prevent_scroll_element.classList.add(this.options.prevent_scroll_class)
-		}
-
-		this._lightbox.classList.add(this.options.lightbox_visible_class)
-
-		this.displayLegend(item.legend);
-
-		if (this.options.dots === true) {
-			this._nav_dots.childNodes.forEach((dot: HTMLElement) => {
-				dot.classList.toggle('active', parseInt(dot.dataset.index, 10) === item.index)
-			})
-		}
+		return item
 	}
 
 	public hide(): this {
@@ -113,6 +92,28 @@ export default class Lightbox {
 		this.setCurrent(null)
 
 		return this
+	}
+
+	public find(src: string, group?: string): LightboxItem|null {
+		let item = null
+
+		if (group) {
+			item = this._groups.get(group).findBy(src)
+		} else {
+			const groups = this._groups.all()
+
+			for (let groupName in groups) {
+				if (groups.hasOwnProperty(groupName)) {
+					item = this._groups.get(groupName).findBy(src)
+
+					if (item !== null) {
+						break
+					}
+				}
+			}
+		}
+
+		return item
 	}
 
 	public prev(): this {
@@ -149,7 +150,7 @@ export default class Lightbox {
 	}
 
 	public refresh(groupName: string = null): object {
-		let altered = {};
+		let altered = {}
 
 		if (groupName === null) {
 			const groups = this._groups.all()
@@ -223,12 +224,43 @@ export default class Lightbox {
 		return this
 	}
 
+	private revealImage(item: LightboxItem): void {
+		this._lightbox.classList.add(this.options.image_loading_class)
+
+		this._image = new Image()
+		this._image.src = item.src
+
+		this._image.onload = (): void => {
+			this.setInnerBoundings()
+
+			this._lightbox_inner.style.backgroundImage = `url('${this._image.src}')`
+
+			setTimeout(() => {
+				this._lightbox.classList.remove(this.options.image_loading_class)
+			}, 300)
+		}
+
+		if (this.options.prevent_scroll) {
+			this.options.prevent_scroll_element.classList.add(this.options.prevent_scroll_class)
+		}
+
+		this._lightbox.classList.add(this.options.lightbox_visible_class)
+
+		this.displayLegend(item.legend)
+
+		if (this.options.dots === true) {
+			this._nav_dots.childNodes.forEach((dot: HTMLElement) => {
+				dot.classList.toggle('active', parseInt(dot.dataset.index, 10) === item.index)
+			})
+		}
+	}
+
 	private goTo(item: LightboxItem): void {
 		this.hide()
 
 		this.setCurrent(item)
 
-		this.show(item)
+		this.revealImage(item)
 	}
 
 	private refreshGroup(groupName: string): object {
@@ -335,7 +367,7 @@ export default class Lightbox {
 				this.createNavDots(lightboxItem)
 			}
 
-			this.show(lightboxItem)
+			this.revealImage(lightboxItem)
 		})
 
 		this._groups.addTo(group, lightboxItem)
@@ -381,7 +413,7 @@ export default class Lightbox {
 		e.preventDefault()
 
 		if (this._current === null) {
-			return;
+			return
 		}
 
 		const hasSiblings = this._groups.size(this._current.group) > 1
@@ -391,15 +423,15 @@ export default class Lightbox {
 				if (hasSiblings) {
 					this.prev()
 				}
-				break;
+				break
 			case 'ArrowRight':
 				if (hasSiblings) {
 					this.next()
 				}
-				break;
+				break
 			case 'Escape':
 				this.hide()
-				break;
+				break
 		}
 	}
 

@@ -771,9 +771,9 @@ parcelRequire = function (modules, cache, entry, globalName) {
             prevent_scroll_element: document.body,
             inner_offset: 30,
             nav: true,
-            dots: true,
             nav_prev_class: 'lightbox--nav-prev',
             nav_next_class: 'lightbox--nav-next',
+            dots: true,
             nav_dots_class: 'lightbox--nav-dots'
           };
         },
@@ -781,36 +781,14 @@ parcelRequire = function (modules, cache, entry, globalName) {
         configurable: true
       });
 
-      Lightbox.prototype.show = function (item) {
-        var _this = this;
+      Lightbox.prototype.show = function (src, group) {
+        var item = this.find(src, group);
 
-        this._lightbox.classList.add(this.options.image_loading_class);
-
-        this._image = new Image();
-        this._image.src = item.src;
-
-        this._image.onload = function () {
-          _this.setInnerBoundings();
-
-          _this._lightbox_inner.style.backgroundImage = "url('" + _this._image.src + "')";
-          setTimeout(function () {
-            _this._lightbox.classList.remove(_this.options.image_loading_class);
-          }, 300);
-        };
-
-        if (this.options.prevent_scroll) {
-          this.options.prevent_scroll_element.classList.add(this.options.prevent_scroll_class);
+        if (item !== null) {
+          this.revealImage(item);
         }
 
-        this._lightbox.classList.add(this.options.lightbox_visible_class);
-
-        this.displayLegend(item.legend);
-
-        if (this.options.dots === true) {
-          this._nav_dots.childNodes.forEach(function (dot) {
-            dot.classList.toggle('active', parseInt(dot.dataset.index, 10) === item.index);
-          });
-        }
+        return item;
       };
 
       Lightbox.prototype.hide = function () {
@@ -824,6 +802,28 @@ parcelRequire = function (modules, cache, entry, globalName) {
         this._image = null;
         this.setCurrent(null);
         return this;
+      };
+
+      Lightbox.prototype.find = function (src, group) {
+        var item = null;
+
+        if (group) {
+          item = this._groups.get(group).findBy(src);
+        } else {
+          var groups = this._groups.all();
+
+          for (var groupName in groups) {
+            if (groups.hasOwnProperty(groupName)) {
+              item = this._groups.get(groupName).findBy(src);
+
+              if (item !== null) {
+                break;
+              }
+            }
+          }
+        }
+
+        return item;
       };
 
       Lightbox.prototype.prev = function () {
@@ -938,10 +938,42 @@ parcelRequire = function (modules, cache, entry, globalName) {
         return this;
       };
 
+      Lightbox.prototype.revealImage = function (item) {
+        var _this = this;
+
+        this._lightbox.classList.add(this.options.image_loading_class);
+
+        this._image = new Image();
+        this._image.src = item.src;
+
+        this._image.onload = function () {
+          _this.setInnerBoundings();
+
+          _this._lightbox_inner.style.backgroundImage = "url('" + _this._image.src + "')";
+          setTimeout(function () {
+            _this._lightbox.classList.remove(_this.options.image_loading_class);
+          }, 300);
+        };
+
+        if (this.options.prevent_scroll) {
+          this.options.prevent_scroll_element.classList.add(this.options.prevent_scroll_class);
+        }
+
+        this._lightbox.classList.add(this.options.lightbox_visible_class);
+
+        this.displayLegend(item.legend);
+
+        if (this.options.dots === true) {
+          this._nav_dots.childNodes.forEach(function (dot) {
+            dot.classList.toggle('active', parseInt(dot.dataset.index, 10) === item.index);
+          });
+        }
+      };
+
       Lightbox.prototype.goTo = function (item) {
         this.hide();
         this.setCurrent(item);
-        this.show(item);
+        this.revealImage(item);
       };
 
       Lightbox.prototype.refreshGroup = function (groupName) {
@@ -1086,7 +1118,7 @@ parcelRequire = function (modules, cache, entry, globalName) {
             _this.createNavDots(lightboxItem);
           }
 
-          _this.show(lightboxItem);
+          _this.revealImage(lightboxItem);
         });
 
         this._groups.addTo(group, lightboxItem);
@@ -1212,7 +1244,7 @@ parcelRequire = function (modules, cache, entry, globalName) {
     if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
       var hostname = "" || location.hostname;
       var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-      var ws = new WebSocket(protocol + '://' + hostname + ':' + "43035" + '/');
+      var ws = new WebSocket(protocol + '://' + hostname + ':' + "39813" + '/');
 
       ws.onmessage = function (event) {
         checkedAssets = {};
@@ -1418,7 +1450,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "43387" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "37853" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

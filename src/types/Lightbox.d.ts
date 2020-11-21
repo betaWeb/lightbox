@@ -17,7 +17,7 @@ declare class Lightbox {
 
 	constructor(options: Options)
 
-	public show(item: LightboxItem): void
+	public show(src: string, group?: string): LightboxItem|null
 	public hide(): Lightbox
 	public add(el: HTMLElement|HTMLImageElement): Lightbox
 	public remove(el: HTMLElement|HTMLImageElement): LightboxItem|null
@@ -28,6 +28,7 @@ declare class Lightbox {
 
 	private nav(direction: number): Lightbox
 	private refreshGroup(groupName: string): object
+	private revealImage(item: LightboxItem): void
 	private goTo(item: LightboxItem): void
 	private createLightBox(): void
 	private attachEvents(): void
@@ -116,9 +117,9 @@ declare type Options = {
 	prevent_scroll_element?: HTMLElement
 	inner_offset?: number
 	nav?: boolean
-	dots?: boolean
 	nav_prev_class?: string
 	nav_next_class?: string
+	dots?: boolean
 	nav_dots_class?: string
 }
 

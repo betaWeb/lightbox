@@ -43,6 +43,8 @@ new window.Lightbox({
     inner_offset: 30, // gap between screen edge and the image (the ratio is dynamically calculated by the library)
     nav: true,
     nav_prev_class: 'lightbox--prev',
-    nav_next_class: 'lightbox--next'
+    nav_next_class: 'lightbox--next',
+    dots: true,
+    nav_dots_class: 'lightbox--nav-dots'
 })
 ```
