@@ -75,23 +75,28 @@ declare class LightboxList {
 
 declare class LightboxItem {
 
-	public el: HTMLElement
-	public src: string
-	public handler: EventListener
-	public legend: string
-	private _group: string
+	private readonly _el: HTMLElement
+	private readonly _src: string
+	private readonly _legend: string
+	private readonly _handler: EventListener
+	private readonly _group: string
 	private _index: number
 
 	constructor(params: ILightboxItemObject)
 
+	public get el(): HTMLElement
+	public get src(): string
+	public get handler(): EventListener
+	public get legend(): string
 	public get group(): string
 	public get index(): number
 
-	public set group(group: string)
 	public set index(index: number)
+	public set legend(legend: string)
 
-	public addEvent(handler?: EventListener): this
-	public removeEvent(): this
+	public removeEvent(): void
+
+	private bindEventHandler(): void
 }
 
 declare interface ILightboxListGroup {
@@ -101,7 +106,9 @@ declare interface ILightboxListGroup {
 declare interface ILightboxItemObject {
 	el: HTMLElement
 	src: string
-	handler?: EventListener
+	handler: EventListener
+	group: string
+	index: number
 	legend?: string
 }
 
@@ -121,6 +128,12 @@ declare type Options = {
 	nav_next_class?: string
 	dots?: boolean
 	nav_dots_class?: string
+	created?: Function
+	onShow?: Function
+	onHide?: Function
+	onNav?: Function
+	onAdd?: Function
+	onRemove?: Function
 }
 
 declare type AspectRatio = {

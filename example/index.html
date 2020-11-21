@@ -63,7 +63,24 @@
 	<script defer>
 		document.addEventListener('DOMContentLoaded', function () {
 		    let imageId = 2
-            const lightbox = new window.Lightbox('.lightbox--link')
+            const lightbox = new window.Lightbox({
+				selector: '.lightbox--link',
+                onShow(item) {
+                    console.log('Show event', item)
+                },
+                onHide(item) {
+                    console.log('Hide event', item)
+                },
+                onNav(item, direction) {
+                    console.log('Nav event', item, direction)
+                },
+                onAdd(item) {
+                    console.log('Add event', item)
+                },
+                onRemove(item) {
+                    console.log('Remove event', item)
+                }
+			})
             const appendBtn = document.getElementById('append-image')
             const removeBtn = document.getElementById('remove-image')
 			const groupA = document.getElementById('group-A')
@@ -87,7 +104,7 @@
 
                 groupA.appendChild(img.cloneNode())
 
-                console.log(lightbox.refresh())
+                lightbox.add(img)
 
                 imageId += 1
 			})
@@ -95,11 +112,12 @@
 			removeBtn.addEventListener('click', function (e) {
 			    e.preventDefault()
 
-				const last = groupB.children[groupB.children.length - 1]
+				const rand = Math.floor(Math.random() * groupB.children.length)
+				const item = groupB.children[rand]
 
-                console.log(lightbox.remove(last))
+                lightbox.remove(item)
 
-				last.remove()
+                item.remove()
 
                 if (groupB.children.length === 0) {
                     groupB.parentElement.classList.add('d-none')
@@ -128,7 +146,7 @@
 
 		<div class="column col-12 group">
 			<div class="divider"></div>
-			<h2>Gallery B <button class="btn pull-right" id="remove-image">Remove last image</button></h2>
+			<h2>Gallery B <button class="btn pull-right" id="remove-image">Remove random image</button></h2>
 			<div class="gallery" id="group-B">
 				<img src="https://picsum.photos/id/100/200/300" class="lightbox--link img-responsive" data-group="B">
 				<img src="https://picsum.photos/id/101/200/300" class="lightbox--link img-responsive" data-group="B">

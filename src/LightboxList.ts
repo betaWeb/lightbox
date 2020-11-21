@@ -30,7 +30,11 @@ export default class LightboxList {
         const item = this.find(index)
 
         if (item !== null) {
+            item.removeEvent()
+
             this.items.splice(index, 1)
+
+            this.refresh()
         }
 
         return item

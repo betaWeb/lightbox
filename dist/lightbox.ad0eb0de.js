@@ -342,42 +342,68 @@ parcelRequire = function (modules, cache, entry, globalName) {
   "LightboxItem.ts": [function (require, module, exports) {
     "use strict";
 
-    var __importDefault = this && this.__importDefault || function (mod) {
-      return mod && mod.__esModule ? mod : {
-        "default": mod
-      };
-    };
-
     Object.defineProperty(exports, "__esModule", {
       value: true
     });
-
-    var LightboxGroup_1 = __importDefault(require("./LightboxGroup"));
 
     var LightboxItem = function () {
       function LightboxItem(_a) {
         var el = _a.el,
             src = _a.src,
+            legend = _a.legend,
             handler = _a.handler,
-            legend = _a.legend;
-        this.el = null;
-        this.src = null;
-        this.handler = null;
-        this.legend = null;
+            group = _a.group,
+            index = _a.index;
+        this._el = null;
+        this._src = null;
+        this._handler = null;
         this._group = null;
         this._index = null;
-        this.el = el;
-        this.src = src;
-        this.handler = handler || null;
-        this.legend = legend || null;
+        this._legend = null;
+        this._el = el;
+        this._src = src;
+        this._handler = handler;
+        this._group = group;
+        this._index = index;
+        this._legend = legend || null;
+        this._handler = this._handler.bind(this);
+        this.bindEventHandler();
       }
 
+      Object.defineProperty(LightboxItem.prototype, "el", {
+        get: function get() {
+          return this._el;
+        },
+        enumerable: false,
+        configurable: true
+      });
+      Object.defineProperty(LightboxItem.prototype, "src", {
+        get: function get() {
+          return this._src;
+        },
+        enumerable: false,
+        configurable: true
+      });
+      Object.defineProperty(LightboxItem.prototype, "handler", {
+        get: function get() {
+          return this._handler;
+        },
+        enumerable: false,
+        configurable: true
+      });
+      Object.defineProperty(LightboxItem.prototype, "legend", {
+        get: function get() {
+          return this._legend;
+        },
+        set: function set(legend) {
+          this._legend = legend;
+        },
+        enumerable: false,
+        configurable: true
+      });
       Object.defineProperty(LightboxItem.prototype, "group", {
         get: function get() {
           return this._group;
-        },
-        set: function set(group) {
-          this._group = group || LightboxGroup_1.default.DEFAULT_NAME;
         },
         enumerable: false,
         configurable: true
@@ -393,27 +419,21 @@ parcelRequire = function (modules, cache, entry, globalName) {
         configurable: true
       });
 
-      LightboxItem.prototype.addEvent = function (handler) {
-        if (handler) {
-          this.handler = handler;
-        }
+      LightboxItem.prototype.removeEvent = function () {
+        this._el.removeEventListener('click', this._handler);
 
-        this.el.addEventListener('click', this.handler);
         return this;
       };
 
-      LightboxItem.prototype.removeEvent = function () {
-        this.el.removeEventListener('click', this.handler);
-        return this;
+      LightboxItem.prototype.bindEventHandler = function () {
+        this._el.addEventListener('click', this._handler);
       };
 
       return LightboxItem;
     }();
 
     exports.default = LightboxItem;
-  }, {
-    "./LightboxGroup": "LightboxGroup.ts"
-  }],
+  }, {}],
   "LightboxList.ts": [function (require, module, exports) {
     "use strict";
 
@@ -463,7 +483,9 @@ parcelRequire = function (modules, cache, entry, globalName) {
         var item = this.find(index);
 
         if (item !== null) {
+          item.removeEvent();
           this.items.splice(index, 1);
+          this.refresh();
         }
 
         return item;
@@ -755,6 +777,7 @@ parcelRequire = function (modules, cache, entry, globalName) {
         this.onKeyup = this.onKeyup.bind(this);
         this.onResize = this.onResize.bind(this);
         this.attachEvents();
+        this.options.created(this._groups);
       }
 
       Object.defineProperty(Lightbox, "default_options", {
@@ -774,7 +797,13 @@ parcelRequire = function (modules, cache, entry, globalName) {
             nav_prev_class: 'lightbox--nav-prev',
             nav_next_class: 'lightbox--nav-next',
             dots: true,
-            nav_dots_class: 'lightbox--nav-dots'
+            nav_dots_class: 'lightbox--nav-dots',
+            created: function created() {},
+            onShow: function onShow() {},
+            onHide: function onHide() {},
+            onNav: function onNav() {},
+            onAdd: function onAdd() {},
+            onRemove: function onRemove() {}
           };
         },
         enumerable: false,
@@ -800,6 +829,7 @@ parcelRequire = function (modules, cache, entry, globalName) {
 
         this._lightbox_inner.style.backgroundImage = null;
         this._image = null;
+        this.options.onHide(this._current);
         this.setCurrent(null);
         return this;
       };
@@ -835,7 +865,8 @@ parcelRequire = function (modules, cache, entry, globalName) {
       };
 
       Lightbox.prototype.add = function (el) {
-        this.storeElement(el);
+        var item = this.storeElement(el);
+        this.options.onAdd(item);
         return this;
       };
 
@@ -849,10 +880,9 @@ parcelRequire = function (modules, cache, entry, globalName) {
 
           if (this._groups.size(group) === 0) {
             this._groups.remove(group);
-          } else {
-            this._groups.get(group).refresh();
           }
 
+          this.options.onRemove(item);
           return item;
         }
 
@@ -932,6 +962,7 @@ parcelRequire = function (modules, cache, entry, globalName) {
         var item = this._groups.retrieve(group, newIndex + direction);
 
         if (item !== null) {
+          this.options.onNav(item, direction);
           this.goTo(item);
         }
 
@@ -952,6 +983,8 @@ parcelRequire = function (modules, cache, entry, globalName) {
           _this._lightbox_inner.style.backgroundImage = "url('" + _this._image.src + "')";
           setTimeout(function () {
             _this._lightbox.classList.remove(_this.options.image_loading_class);
+
+            _this.options.onShow(item);
           }, 300);
         };
 
@@ -1090,38 +1123,38 @@ parcelRequire = function (modules, cache, entry, globalName) {
       };
 
       Lightbox.prototype.storeElement = function (el) {
-        var _this = this;
+        var ctx = this;
+        var groupName = el.dataset.group || LightboxGroup_1.default.DEFAULT_NAME;
 
-        var src = utils_1.getElementSrc(el);
-        var group = el.dataset.group || LightboxGroup_1.default.DEFAULT_NAME;
-        var legend = el.dataset.legend || null;
+        var handler = function handler() {
+          ctx.setCurrent(this);
+          var hideNav = ctx._groups.size(groupName) <= 1;
 
-        this._groups.create(group);
+          ctx._nav_prev.classList.toggle('is-hidden', hideNav);
+
+          ctx._nav_next.classList.toggle('is-hidden', hideNav);
+
+          if (!hideNav) {
+            ctx.createNavDots(this);
+          }
+
+          ctx.revealImage(this);
+        };
+
+        this._groups.create(groupName);
 
         var lightboxItem = new LightboxItem_1.default({
           el: el,
-          src: src,
-          legend: legend
-        });
-        lightboxItem.group = group;
-        lightboxItem.index = this._groups.size(group);
-        lightboxItem.addEvent(function () {
-          _this.setCurrent(lightboxItem);
-
-          var hideNav = _this._groups.size(group) <= 1;
-
-          _this._nav_prev.classList.toggle('is-hidden', hideNav);
-
-          _this._nav_next.classList.toggle('is-hidden', hideNav);
-
-          if (!hideNav) {
-            _this.createNavDots(lightboxItem);
-          }
-
-          _this.revealImage(lightboxItem);
+          src: utils_1.getElementSrc(el),
+          handler: handler,
+          group: groupName,
+          index: this._groups.size(groupName),
+          legend: el.dataset.legend || null
         });
 
-        this._groups.addTo(group, lightboxItem);
+        this._groups.addTo(groupName, lightboxItem);
+
+        return lightboxItem;
       };
 
       Lightbox.prototype.displayLegend = function (legend) {
@@ -1244,7 +1277,7 @@ parcelRequire = function (modules, cache, entry, globalName) {
     if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
       var hostname = "" || location.hostname;
       var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-      var ws = new WebSocket(protocol + '://' + hostname + ':' + "39813" + '/');
+      var ws = new WebSocket(protocol + '://' + hostname + ':' + "45881" + '/');
 
       ws.onmessage = function (event) {
         checkedAssets = {};
@@ -1450,7 +1483,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "37853" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "41961" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

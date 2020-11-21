@@ -60,7 +60,24 @@
 	<script src="/lightbox.ad0eb0de.js" defer=""></script>
 	<script defer="">document.addEventListener('DOMContentLoaded', function () {
   var imageId = 2;
-  var lightbox = new window.Lightbox('.lightbox--link');
+  var lightbox = new window.Lightbox({
+    selector: '.lightbox--link',
+    onShow: function onShow(item) {
+      console.log('Show event', item);
+    },
+    onHide: function onHide(item) {
+      console.log('Hide event', item);
+    },
+    onNav: function onNav(item, direction) {
+      console.log('Nav event', item, direction);
+    },
+    onAdd: function onAdd(item) {
+      console.log('Add event', item);
+    },
+    onRemove: function onRemove(item) {
+      console.log('Remove event', item);
+    }
+  });
   var appendBtn = document.getElementById('append-image');
   var removeBtn = document.getElementById('remove-image');
   var groupA = document.getElementById('group-A');
@@ -81,14 +98,15 @@
     };
 
     groupA.appendChild(img.cloneNode());
-    console.log(lightbox.refresh());
+    lightbox.add(img);
     imageId += 1;
   });
   removeBtn.addEventListener('click', function (e) {
     e.preventDefault();
-    var last = groupB.children[groupB.children.length - 1];
-    console.log(lightbox.remove(last));
-    last.remove();
+    var rand = Math.floor(Math.random() * groupB.children.length);
+    var item = groupB.children[rand];
+    lightbox.remove(item);
+    item.remove();
 
     if (groupB.children.length === 0) {
       groupB.parentElement.classList.add('d-none');
@@ -116,7 +134,7 @@
 
 		<div class="column col-12 group">
 			<div class="divider"></div>
-			<h2>Gallery B <button class="btn pull-right" id="remove-image">Remove last image</button></h2>
+			<h2>Gallery B <button class="btn pull-right" id="remove-image">Remove random image</button></h2>
 			<div class="gallery" id="group-B">
 				<img src="https://picsum.photos/id/100/200/300" class="lightbox--link img-responsive" data-group="B">
 				<img src="https://picsum.photos/id/101/200/300" class="lightbox--link img-responsive" data-group="B">

@@ -42,7 +42,13 @@ export default class Lightbox {
 			nav_prev_class: 'lightbox--nav-prev',
 			nav_next_class: 'lightbox--nav-next',
 			dots: true,
-			nav_dots_class: 'lightbox--nav-dots'
+			nav_dots_class: 'lightbox--nav-dots',
+			created: () => {},
+			onShow: () => {},
+			onHide: () => {},
+			onNav: () => {},
+			onAdd: () => {},
+			onRemove: () => {}
 		}
 	}
 
@@ -67,6 +73,8 @@ export default class Lightbox {
 		this.onResize = this.onResize.bind(this)
 
 		this.attachEvents()
+
+		this.options.created(this._groups)
 	}
 
 	public show(src: string, group?: string): LightboxItem|null {
@@ -88,6 +96,8 @@ export default class Lightbox {
 
 		this._lightbox_inner.style.backgroundImage = null
 		this._image = null
+
+		this.options.onHide(this._current)
 
 		this.setCurrent(null)
 
@@ -125,7 +135,9 @@ export default class Lightbox {
 	}
 
 	public add(el: HTMLElement|HTMLImageElement): this {
-		this.storeElement(el)
+		const item = this.storeElement(el)
+
+		this.options.onAdd(item)
 
 		return this
 	}
@@ -139,9 +151,9 @@ export default class Lightbox {
 
 			if (this._groups.size(group) === 0) {
 				this._groups.remove(group)
-			} else {
-				this._groups.get(group).refresh()
 			}
+
+			this.options.onRemove(item)
 
 			return item
 		}
@@ -218,6 +230,7 @@ export default class Lightbox {
 		let item: LightboxItem = this._groups.retrieve(group, newIndex + direction)
 
 		if (item !== null) {
+			this.options.onNav(item, direction)
 			this.goTo(item)
 		}
 
@@ -237,6 +250,7 @@ export default class Lightbox {
 
 			setTimeout(() => {
 				this._lightbox.classList.remove(this.options.image_loading_class)
+				this.options.onShow(item)
 			}, 300)
 		}
 
@@ -343,34 +357,38 @@ export default class Lightbox {
 		})
 	}
 
-	private storeElement(el: HTMLElement): void {
-		const src = getElementSrc(el)
-		const group = el.dataset.group || LightboxGroup.DEFAULT_NAME
-		const legend = el.dataset.legend || null
+	private storeElement(el: HTMLElement): LightboxItem {
+		const ctx = this
+		const groupName = el.dataset.group || LightboxGroup.DEFAULT_NAME
+		const handler = function (): void {
+			ctx.setCurrent(this)
 
-		this._groups.create(group)
+			const hideNav = ctx._groups.size(groupName) <= 1
 
-		const lightboxItem = new LightboxItem({el, src, legend})
-
-		lightboxItem.group = group
-		lightboxItem.index = this._groups.size(group)
-
-		lightboxItem.addEvent((): void => {
-			this.setCurrent(lightboxItem)
-
-			const hideNav = this._groups.size(group) <= 1
-
-			this._nav_prev.classList.toggle('is-hidden', hideNav)
-			this._nav_next.classList.toggle('is-hidden', hideNav)
+			ctx._nav_prev.classList.toggle('is-hidden', hideNav)
+			ctx._nav_next.classList.toggle('is-hidden', hideNav)
 
 			if (!hideNav) {
-				this.createNavDots(lightboxItem)
+				ctx.createNavDots(this)
 			}
 
-			this.revealImage(lightboxItem)
+			ctx.revealImage(this)
+		}
+
+		this._groups.create(groupName)
+
+		const lightboxItem = new LightboxItem({
+			el,
+			src: getElementSrc(el),
+			handler,
+			group: groupName,
+			index: this._groups.size(groupName),
+			legend: el.dataset.legend || null
 		})
 
-		this._groups.addTo(group, lightboxItem)
+		this._groups.addTo(groupName, lightboxItem)
+
+		return lightboxItem
 	}
 
 	private displayLegend(legend?: string): void {

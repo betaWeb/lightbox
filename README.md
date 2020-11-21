@@ -41,10 +41,16 @@ new window.Lightbox({
     prevent_scroll_class: 'prevent-scroll',
     prevent_scroll_element: document.body,
     inner_offset: 30, // gap between screen edge and the image (the ratio is dynamically calculated by the library)
-    nav: true,
+    nav: true, // display nvigation arrows
     nav_prev_class: 'lightbox--prev',
     nav_next_class: 'lightbox--next',
-    dots: true,
-    nav_dots_class: 'lightbox--nav-dots'
+    dots: true, // display nvigation dots
+    nav_dots_class: 'lightbox--nav-dots',
+	created: (groups: LightboxGroup) => {}, // Lightbox created event
+	onShow: (item: LightboxItem) => {}, // Lightbox show event
+	onHide: (item: LightboxItem) => {}, // Lightbox hide event
+	onNav: (item: LightboxItem, direction: number) => {}, // Lightbox nav event (direction : -1 prev, 1 next)
+	onAdd: (item: LightboxItem) => {}, // Lightbox add image event
+	onRemove: (item: LightboxItem) => {}// Lightbox remove image event
 })
 ```

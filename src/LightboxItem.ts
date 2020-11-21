@@ -2,23 +2,45 @@ import LightboxGroup from './LightboxGroup'
 
 export default class LightboxItem {
 
-    public el: HTMLElement = null
+    private readonly _el: HTMLElement = null
 
-    public src: string = null
+    private readonly _src: string = null
 
-    public handler: EventListener = null
+    private readonly _handler: EventListener = null
 
-    public legend: string = null
-
-    private _group: string = null
+    private readonly _group: string = null
 
     private _index: number = null
 
-    constructor({el, src, handler, legend}: ILightboxItemObject) {
-        this.el = el
-        this.src = src
-        this.handler = handler || null
-        this.legend = legend || null
+    private _legend: string = null
+
+    constructor({el, src, legend, handler, group, index}: ILightboxItemObject) {
+        this._el = el
+        this._src = src
+        this._handler = handler
+        this._group = group
+        this._index = index
+        this._legend = legend || null
+
+        this._handler = this._handler.bind(this)
+
+        this.bindEventHandler()
+    }
+
+    public get el(): HTMLElement {
+        return this._el
+    }
+
+    public get src(): string {
+        return this._src
+    }
+
+    public get handler(): EventListener {
+        return this._handler
+    }
+
+    public get legend(): string {
+        return this._legend
     }
 
     public get group(): string {
@@ -29,28 +51,22 @@ export default class LightboxItem {
         return this._index
     }
 
-    public set group(group: string) {
-        this._group = group || LightboxGroup.DEFAULT_NAME
-    }
-
-    public set index(index: number) {
+    public set index(index) {
         this._index = index
     }
 
-    public addEvent(handler?: EventListener): this {
-        if (handler) {
-            this.handler = handler
-        }
+    public set legend(legend: string) {
+        this._legend = legend
+    }
 
-        this.el.addEventListener('click', this.handler as EventListener)
+    public removeEvent(): this {
+        this._el.removeEventListener('click', this._handler as EventListener)
 
         return this
     }
 
-    public removeEvent(): this {
-        this.el.removeEventListener('click', this.handler as EventListener)
-
-        return this
+    private bindEventHandler(): void {
+        this._el.addEventListener('click', this._handler as EventListener)
     }
 
 }
