@@ -1,3 +1,3 @@
-import Lightbox from "./src/Lightbox"
+import Lightbox from "./dist/lightbox.min.js"
 
 globalThis.Lightbox = Lightbox

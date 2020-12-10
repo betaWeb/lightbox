@@ -46,11 +46,11 @@ new window.Lightbox({
     nav_next_class: 'lightbox--next',
     dots: true, // display nvigation dots
     nav_dots_class: 'lightbox--nav-dots',
-	created: (groups: LightboxGroup) => {}, // Lightbox created event
-	onShow: (item: LightboxItem) => {}, // Lightbox show event
-	onHide: (item: LightboxItem) => {}, // Lightbox hide event
-	onNav: (item: LightboxItem, direction: number) => {}, // Lightbox nav event (direction : -1 prev, 1 next)
-	onAdd: (item: LightboxItem) => {}, // Lightbox add image event
-	onRemove: (item: LightboxItem) => {}// Lightbox remove image event
+    created: (groups: LightboxGroup) => {}, // Lightbox created event
+    onShow: (item: LightboxItem) => {}, // Lightbox show event
+    onHide: (item: LightboxItem) => {}, // Lightbox hide event
+    onNav: (item: LightboxItem, direction: number) => {}, // Lightbox nav event (direction : -1 prev, 1 next)
+    onAdd: (item: LightboxItem) => {}, // Lightbox add image event
+    onRemove: (item: LightboxItem) => {}// Lightbox remove image event
 })
 ```
